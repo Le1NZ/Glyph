@@ -29,3 +29,8 @@ dependencyResolutionManagement {
 }
 
 include(":composeApp")
+include(":core:navigation")
+include(":core:design")
+include(":core:utils")
+include(":core:model")
+include(":core:string-resources")
