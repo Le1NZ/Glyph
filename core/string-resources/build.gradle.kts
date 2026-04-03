@@ -6,21 +6,15 @@ plugins {
 
 kotlin {
     androidLibrary {
-        namespace = "ru.glyph.utils"
+        namespace = "ru.glyph.string.resources"
         compileSdk = 36
         minSdk = libs.versions.android.minSdk.get().toInt()
 
         withHostTestBuilder {
         }
-
-        withDeviceTestBuilder {
-            sourceSetTreeName = "test"
-        }.configure {
-            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        }
     }
 
-    val xcfName = "core:utilsKit"
+    val xcfName = "core:stringResourcesKit"
 
     iosX64 {
         binaries.framework {

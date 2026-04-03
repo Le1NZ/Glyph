@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.androidLint)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.kotlinxSerialization)
 }
 
 kotlin {
@@ -11,7 +12,7 @@ kotlin {
     androidLibrary {
         namespace = "ru.glyph.navigation"
         compileSdk = 36
-        minSdk = 26
+        minSdk = libs.versions.android.minSdk.get().toInt()
 
         withHostTestBuilder {
         }
@@ -46,10 +47,16 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                api(libs.navigation3)
+
                 implementation(libs.bundles.compose)
-                implementation(libs.navigation3)
+                implementation(libs.bundles.koin)
+                implementation(libs.kotlinxSerializationCore)
                 implementation(libs.viewmodelNavigation3)
                 implementation(libs.coroutines)
+
+                implementation(projects.core.design)
+                implementation(projects.core.utils)
             }
         }
 
