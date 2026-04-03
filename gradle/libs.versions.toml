@@ -1,7 +1,7 @@
 [versions]
 agp = "8.11.2"
 android-compileSdk = "36"
-android-minSdk = "24"
+android-minSdk = "26"
 android-targetSdk = "36"
 androidx-activity = "1.13.0"
 androidx-appcompat = "1.7.1"
@@ -22,6 +22,8 @@ kotlinStdlib = "2.3.20"
 runner = "1.7.0"
 core = "1.7.0"
 junitVersion = "1.3.0"
+koin = "4.2.0"
+serialization = "1.8.1"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -54,6 +56,15 @@ coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version
 # navigation3
 navigation3 = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
 viewmodelNavigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycle" }
+
+# serialization
+kotlinxSerializationCore = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "serialization" }
+
+# koin
+koinCompose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+koinViewModel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
+koinNavigation3 = { module = "io.insert-koin:koin-compose-navigation3", version.ref = "koin" }
+
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlinStdlib" }
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
@@ -67,6 +78,8 @@ composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "k
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 androidLint = { id = "com.android.lint", version.ref = "agp" }
+kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 [bundles]
 compose = ["runtimeCompose", "compose-runtime", "compose-foundation", "compose-ui", "compose-material3", "compose-components-resources", "compose-uiToolingPreview"]
+koin = ["koinCompose", "koinViewModel", "koinNavigation3"]

@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinxSerialization)
 }
 
 kotlin {
@@ -33,6 +34,9 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.bundles.compose)
             implementation(libs.viewmodel)
+            implementation(libs.bundles.koin)
+            implementation(libs.kotlinxSerializationCore)
+            implementation(projects.core.navigation)
         }
     }
 }

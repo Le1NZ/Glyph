@@ -11,7 +11,7 @@ kotlin {
     androidLibrary {
         namespace = "ru.glyph.design"
         compileSdk = 36
-        minSdk = 26
+        minSdk = libs.versions.android.minSdk.get().toInt()
 
         withHostTestBuilder {
         }
