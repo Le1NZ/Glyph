@@ -11,6 +11,11 @@ object NavigationLocalDi {
 
     val module = module {
         single { NavigatorImpl() } bind Navigator::class
-        viewModel { NavigatorScreenViewModel(navigatorImpl = get()) }
+        viewModel {
+            NavigatorScreenViewModel(
+                navigatorImpl = get(),
+                initialDestinationsProvider = get(),
+            )
+        }
     }
 }

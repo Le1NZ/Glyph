@@ -2,17 +2,17 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.androidLint)
-    alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.composeCompiler)
 }
 
 kotlin {
 
     androidLibrary {
-        namespace = "ru.glyph.design"
-        compileSdk = 36
-        minSdk = libs.versions.android.minSdk.get().toInt()
+        namespace = "ru.glyph.screen.home"
         experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
+        compileSdk = 36
+        minSdk = 26
 
         withHostTestBuilder {
         }
@@ -23,8 +23,7 @@ kotlin {
             instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         }
     }
-
-    val xcfName = "core:designKit"
+    val xcfName = "feature:screen:homeKit"
 
     iosX64 {
         binaries.framework {
@@ -48,7 +47,25 @@ kotlin {
         commonMain {
             dependencies {
                 implementation(libs.bundles.compose)
-                implementation(libs.kotlin.stdlib)
+                implementation(libs.bundles.koin)
+                implementation(libs.coroutines)
+                implementation(libs.viewmodel)
+
+                implementation(projects.core.navigation)
+                implementation(projects.core.design)
+                implementation(projects.core.utils)
+                implementation(projects.core.stringResources)
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
+
+        androidMain {
+            dependencies {
             }
         }
 
@@ -59,11 +76,12 @@ kotlin {
                 implementation(libs.androidx.junit)
             }
         }
+
+        iosMain {
+            dependencies {
+            }
+        }
     }
+
 }
 
-compose.resources {
-    publicResClass = true
-    packageOfResClass = "ru.glyph.design"
-    generateResClass = always
-}

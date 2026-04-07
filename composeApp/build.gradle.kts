@@ -36,7 +36,10 @@ kotlin {
             implementation(libs.viewmodel)
             implementation(libs.bundles.koin)
             implementation(libs.kotlinxSerializationCore)
+
             implementation(projects.core.navigation)
+            implementation(projects.core.design)
+            implementation(projects.feature.screen.home)
         }
     }
 }
