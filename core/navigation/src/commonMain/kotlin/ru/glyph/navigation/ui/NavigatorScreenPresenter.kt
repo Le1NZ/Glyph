@@ -15,13 +15,12 @@ internal interface NavigatorScreenPresenter {
 
 internal class NavigatorScreenPresenterImpl(
     private val viewModel: NavigatorScreenViewModel,
-    private val initialDestinationsProvider: InitialDestinationsProvider,
 ) : NavigatorScreenPresenter {
 
     override val events = viewModel.navigationEvents
 
     override fun getInitialDestinations(): List<BaseDestination> {
-        return initialDestinationsProvider.initialDestinations()
+        return viewModel.getInitialDestinations()
     }
 
     override fun onBackFromScreenDestination() {

@@ -3,6 +3,7 @@ package ru.glyph
 import androidx.compose.runtime.Composable
 import org.koin.compose.KoinApplication
 import org.koin.dsl.koinConfiguration
+import ru.glyph.design.theme.GlyphTheme
 import ru.glyph.di.AppDi
 import ru.glyph.navigation.api.NavigatorScreen
 
@@ -13,6 +14,8 @@ fun App() {
             declaration = { modules(AppDi.modules) },
         ),
     ) {
-        NavigatorScreen()
+        GlyphTheme {
+            NavigatorScreen()
+        }
     }
 }

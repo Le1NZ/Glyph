@@ -1,0 +1,15 @@
+<resources>
+    <!-- Home screen -->
+    <string name="home_search_placeholder">Поиск заметок…</string>
+    <string name="home_folders_section">Папки</string>
+    <string name="home_recent_section">Недавние</string>
+    <string name="home_profile_cd">Профиль</string>
+    <string name="home_create_note_cd">Создать заметку</string>
+
+    <plurals name="home_notes_count">
+        <item quantity="one">%1$d заметка</item>
+        <item quantity="few">%1$d заметки</item>
+        <item quantity="many">%1$d заметок</item>
+        <item quantity="other">%1$d заметок</item>
+    </plurals>
+</resources>

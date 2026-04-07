@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidKotlinMultiplatformLibrary)
     alias(libs.plugins.androidLint)
+    alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.composeMultiplatform)
 }
 
 kotlin {
@@ -9,6 +11,7 @@ kotlin {
         namespace = "ru.glyph.string.resources"
         compileSdk = 36
         minSdk = libs.versions.android.minSdk.get().toInt()
+        experimentalProperties["android.experimental.kmp.enableAndroidResources"] = true
 
         withHostTestBuilder {
         }
@@ -37,9 +40,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.kotlin.stdlib)
-                implementation(libs.coroutines)
-                implementation(libs.napier)
+                implementation(libs.bundles.compose)
             }
         }
 
@@ -53,5 +54,10 @@ kotlin {
             }
         }
     }
+}
 
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "ru.glyph.string.resources"
+    generateResClass = always
 }
