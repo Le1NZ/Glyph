@@ -24,7 +24,7 @@ internal class NavigationState(
 ) {
     var overlay by overlayState
 
-    val stack: List<BaseDestination> = (backStack + overlay).fastFilterNotNull()
+    val stack: List<BaseDestination> get() = (backStack + overlay).fastFilterNotNull()
 }
 
 @Composable

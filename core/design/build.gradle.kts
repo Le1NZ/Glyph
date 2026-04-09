@@ -49,6 +49,8 @@ kotlin {
             dependencies {
                 implementation(libs.bundles.compose)
                 implementation(libs.kotlin.stdlib)
+                implementation(libs.coilCompose)
+                implementation(libs.coilNetwork)
             }
         }
 

@@ -5,6 +5,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import org.koin.compose.navigation3.koinEntryProvider
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -45,11 +47,15 @@ internal fun NavigatorScreenContent(
                 NavDisplay(
                     backStack = state.stack,
                     entryProvider = koinEntryProvider(),
+                    entryDecorators = listOf(
+                        rememberSaveableStateHolderNavEntryDecorator(),
+                        rememberViewModelStoreNavEntryDecorator(),
+                    ),
                     onBack = controller::onBackFromScreenDestination,
                     sceneStrategy = sceneStrategy,
-                    transitionSpec = { animationSpec() },
-                    popTransitionSpec = { animationSpec() },
-                    predictivePopTransitionSpec = { animationSpec() },
+                    transitionSpec = { pushAnimationSpec() },
+                    popTransitionSpec = { popAnimationSpec() },
+                    predictivePopTransitionSpec = { popAnimationSpec() },
                 )
             }
         }

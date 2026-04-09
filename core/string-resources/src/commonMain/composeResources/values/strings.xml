@@ -6,6 +6,17 @@
     <string name="home_profile_cd">Профиль</string>
     <string name="home_create_note_cd">Создать заметку</string>
 
+    <!-- Auth screen -->
+    <string name="auth_title">Glyph</string>
+    <string name="auth_subtitle">Ваши заметки всегда рядом</string>
+    <string name="auth_sign_in_button">Войти через Яндекс</string>
+    <string name="auth_error">Ошибка авторизации. Попробуйте снова.</string>
+
+    <!-- Profile screen -->
+    <string name="profile_title">Профиль</string>
+    <string name="profile_sign_out">Выйти</string>
+    <string name="profile_back_cd">Назад</string>
+
     <plurals name="home_notes_count">
         <item quantity="one">%1$d заметка</item>
         <item quantity="few">%1$d заметки</item>

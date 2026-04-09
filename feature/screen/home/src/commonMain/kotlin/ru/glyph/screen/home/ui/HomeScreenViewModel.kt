@@ -3,10 +3,12 @@ package ru.glyph.screen.home.ui
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import ru.glyph.navigation.api.Navigator
+import ru.glyph.navigation.api.model.Screen
 import ru.glyph.screen.home.ui.composable.model.HomeUiState
 
 internal class HomeScreenViewModel(
-
+    private val navigator: Navigator,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -19,4 +21,7 @@ internal class HomeScreenViewModel(
         _searchQuery.value = query
     }
 
+    fun onProfileClick() {
+        navigator.navigateTo(Screen.Profile)
+    }
 }

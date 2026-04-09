@@ -1,5 +1,11 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+
+val localProperties = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+val yandexClientId: String = localProperties.getProperty("YANDEX_CLIENT_ID")
+    ?: error("YANDEX_CLIENT_ID is not set in local.properties")
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -15,7 +21,7 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
-    
+
     listOf(
         iosArm64(),
         iosSimulatorArm64()
@@ -25,11 +31,13 @@ kotlin {
             isStatic = true
         }
     }
-    
+
     sourceSets {
         androidMain.dependencies {
             implementation(libs.compose.uiToolingPreview)
             implementation(libs.androidx.activity.compose)
+            implementation(libs.koinAndroid)
+            implementation(libs.yandexAuthSdk)
         }
         commonMain.dependencies {
             implementation(libs.bundles.compose)
@@ -39,7 +47,12 @@ kotlin {
 
             implementation(projects.core.navigation)
             implementation(projects.core.design)
+            implementation(projects.core.datastore)
+            implementation(projects.core.network)
+            implementation(projects.core.auth)
             implementation(projects.feature.screen.home)
+            implementation(projects.feature.screen.auth)
+            implementation(projects.feature.screen.profile)
         }
     }
 }
@@ -54,6 +67,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
+        manifestPlaceholders["YANDEX_CLIENT_ID"] = yandexClientId
     }
     packaging {
         resources {
@@ -74,4 +88,3 @@ android {
 dependencies {
     debugImplementation(libs.compose.uiTooling)
 }
-

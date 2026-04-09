@@ -4,5 +4,7 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>YANDEX_CLIENT_ID</key>
+	<string>$(YANDEX_CLIENT_ID)</string>
 </dict>
 </plist>
