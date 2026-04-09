@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,11 +29,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import ru.glyph.design.Res
 import ru.glyph.design.ic_add
 import ru.glyph.design.ic_person
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.resources.stringResource
 import ru.glyph.design.padding.localPaddingValues
 import ru.glyph.design.theme.GlyphShape
 import ru.glyph.design.theme.GlyphTheme
@@ -43,18 +44,19 @@ import ru.glyph.screen.home.ui.HomeScreenViewModel
 import ru.glyph.screen.home.ui.composable.component.HomeFoldersGrid
 import ru.glyph.screen.home.ui.composable.component.HomeNoteItem
 import ru.glyph.screen.home.ui.composable.component.SearchBar
-import ru.glyph.string.resources.Res as StringRes
 import ru.glyph.string.resources.home_create_note_cd
 import ru.glyph.string.resources.home_folders_section
 import ru.glyph.string.resources.home_profile_cd
 import ru.glyph.string.resources.home_recent_section
+import ru.glyph.string.resources.Res as StringRes
 
 @Composable
 internal fun HomeScreen(
     viewModel: HomeScreenViewModel,
+    modifier: Modifier = Modifier,
 ) {
     val presenter = remember(viewModel) { HomeScreenPresenterImpl(viewModel) }
-    HomeScreenContent(presenter = presenter)
+    HomeScreenContent(presenter = presenter, modifier = modifier)
 }
 
 @Composable
@@ -62,23 +64,18 @@ private fun HomeScreenContent(
     presenter: HomeScreenPresenter,
     modifier: Modifier = Modifier,
 ) {
-    val colors = GlyphTheme.colors
-    val typography = GlyphTheme.typography
-    val topPadding = localPaddingValues.calculateTopPadding()
-    val bottomPadding = localPaddingValues.calculateBottomPadding()
-
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(colors.background),
+            .background(GlyphTheme.colors.background),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // ── Header ──────────────────────────────────────────────────────
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(colors.surface)
-                    .padding(top = topPadding)
+                    .background(GlyphTheme.colors.surface)
+                    .padding(top = localPaddingValues.calculateTopPadding())
                     .padding(horizontal = 24.dp)
                     .padding(bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -88,11 +85,8 @@ private fun HomeScreenContent(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    AppLogo(typography = typography, colors = colors)
-                    ProfileButton(
-                        onClick = presenter::onProfileClick,
-                        colors = colors,
-                    )
+                    AppLogo()
+                    ProfileButton(onClick = presenter::onProfileClick)
                 }
                 SearchBar(
                     value = presenter.searchQuery.collectAsStateWithLifecycle().value,
@@ -108,13 +102,13 @@ private fun HomeScreenContent(
                     start = 24.dp,
                     end = 24.dp,
                     top = 24.dp,
-                    bottom = maxOf(24.dp, bottomPadding) + 72.dp,
+                    bottom = maxOf(24.dp, localPaddingValues.calculateBottomPadding()) + 72.dp,
                 ),
             ) {
                 item {
                     Text(
                         text = stringResource(StringRes.string.home_folders_section),
-                        style = typography.heading2.copy(color = colors.textPrimary),
+                        style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     HomeFoldersGrid(
@@ -126,7 +120,7 @@ private fun HomeScreenContent(
                 item {
                     Text(
                         text = stringResource(StringRes.string.home_recent_section),
-                        style = typography.heading2.copy(color = colors.textPrimary),
+                        style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                 }
@@ -145,9 +139,9 @@ private fun HomeScreenContent(
             onClick = presenter::onCreateNoteClick,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = 20.dp + bottomPadding),
-            containerColor = colors.fabBackground,
-            contentColor = colors.fabContent,
+                .padding(end = 20.dp, bottom = 20.dp + localPaddingValues.calculateBottomPadding()),
+            containerColor = GlyphTheme.colors.fabBackground,
+            contentColor = GlyphTheme.colors.fabContent,
             shape = GlyphShape.button,
         ) {
             Icon(
@@ -161,10 +155,10 @@ private fun HomeScreenContent(
 
 @Composable
 private fun AppLogo(
-    typography: ru.glyph.design.theme.GlyphTypography,
-    colors: ru.glyph.design.theme.GlyphColorScheme,
+    modifier: Modifier = Modifier,
 ) {
     Row(
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -173,20 +167,20 @@ private fun AppLogo(
             modifier = Modifier
                 .size(32.dp)
                 .clip(GlyphShape.button)
-                .background(color = colors.textPrimary),
+                .background(color = GlyphTheme.colors.textPrimary),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = "G",
-                style = typography.body.copy(
-                    color = colors.contentOnAccent,
+                style = GlyphTheme.typography.body.copy(
+                    color = GlyphTheme.colors.contentOnAccent,
                     fontWeight = FontWeight.Bold,
                 ),
             )
         }
         Text(
             text = "Glyph",
-            style = typography.heading1.copy(color = colors.textPrimary),
+            style = GlyphTheme.typography.heading1.copy(color = GlyphTheme.colors.textPrimary),
         )
     }
 }
@@ -194,19 +188,20 @@ private fun AppLogo(
 @Composable
 private fun ProfileButton(
     onClick: () -> Unit,
-    colors: ru.glyph.design.theme.GlyphColorScheme,
+    modifier: Modifier = Modifier,
 ) {
     IconButton(
         onClick = onClick,
-        modifier = Modifier
-            .size(40.dp)
-            .clip(GlyphShape.button)
-            .background(colors.surfaceVariant),
+        shape = GlyphShape.button,
+        colors = IconButtonDefaults.iconButtonColors(
+            containerColor = GlyphTheme.colors.surfaceVariant,
+        ),
+        modifier = modifier,
     ) {
         Icon(
             painter = painterResource(Res.drawable.ic_person),
             contentDescription = stringResource(StringRes.string.home_profile_cd),
-            tint = colors.textPrimary,
+            tint = GlyphTheme.colors.textPrimary,
             modifier = Modifier.size(20.dp),
         )
     }

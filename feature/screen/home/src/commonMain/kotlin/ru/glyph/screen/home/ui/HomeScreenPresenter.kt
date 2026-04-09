@@ -24,7 +24,7 @@ internal class HomeScreenPresenterImpl(
     override val state = viewModel.state
 
     override fun onProfileClick() {
-
+        viewModel.onProfileClick()
     }
 
     override fun onFolderClick(id: String) {

@@ -9,7 +9,7 @@ internal object NavigationDi {
 
     val module = module {
         includes(NavigationLocalDi.module)
-        factory<InitialDestinationsProvider> { InitialDestinationsProviderImpl() }
+        factory<InitialDestinationsProvider> { InitialDestinationsProviderImpl(userCenterLazy = inject()) }
         single<NavigationDependencies> { NavigationDependenciesImpl(initialDestinationsProvider = get()) }
     }
 }

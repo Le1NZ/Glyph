@@ -24,6 +24,9 @@ core = "1.7.0"
 junitVersion = "1.3.0"
 koin = "4.2.0"
 serialization = "1.8.1"
+datastore = "1.2.1"
+ktor = "3.1.3"
+yandexAuthSdk = "3.1.3"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -64,6 +67,20 @@ kotlinxSerializationCore = { module = "org.jetbrains.kotlinx:kotlinx-serializati
 koinCompose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
 koinViewModel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
 koinNavigation3 = { module = "io.insert-koin:koin-compose-navigation3", version.ref = "koin" }
+koinAndroid = { module = "io.insert-koin:koin-android", version.ref = "koin" }
+
+# datastore
+datastorePreferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+
+# ktor
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+
+# yandex auth
+yandexAuthSdk = { module = "com.yandex.android:authsdk", version.ref = "yandexAuthSdk" }
 
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlinStdlib" }
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
