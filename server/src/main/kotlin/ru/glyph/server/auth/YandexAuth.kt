@@ -8,6 +8,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.auth.HttpAuthHeader
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -28,6 +29,11 @@ fun Application.configureAuth() {
     install(Authentication) {
         bearer("yandex") {
             realm = "Glyph API"
+            authHeader { call ->
+                call.request.headers["X-Auth-Token"]?.let { token ->
+                    HttpAuthHeader.Single("Bearer", token)
+                }
+            }
             authenticate { credential ->
                 val userInfo = validateYandexToken(credential.token) ?: return@authenticate null
                 NotesRepository.ensureUser(userInfo.id)

@@ -3,9 +3,8 @@ name: Deploy Server
 on:
   push:
     branches: [main]
-    paths:
-      - 'server/**'
-      - '.github/workflows/deploy-server.yml'
+  pull_request:
+    branches: [main]
 
 jobs:
   deploy:
