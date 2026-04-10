@@ -12,7 +12,7 @@ import ru.glyph.screen.home.ui.composable.HomeScreen
 object HomeScreenLocalDi {
 
     val module = module {
-        factory { HomeScreenViewModel(get()) }
+        factory { HomeScreenViewModel(get(), get()) }
         navigation<Screen.Home> { HomeScreen(viewModel = koinViewModel<HomeScreenViewModel>()) }
     }
 }

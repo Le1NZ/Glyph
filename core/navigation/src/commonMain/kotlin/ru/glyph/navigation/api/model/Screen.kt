@@ -13,4 +13,7 @@ sealed class Screen : BaseDestination() {
 
     @Serializable
     data object Profile : Screen()
+
+    @Serializable
+    data class Note(val noteId: Long) : Screen()
 }

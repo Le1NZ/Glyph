@@ -13,6 +13,8 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.kotlinxSerialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.roomPlugin)
 }
 
 kotlin {
@@ -53,6 +55,9 @@ kotlin {
             implementation(projects.feature.screen.home)
             implementation(projects.feature.screen.auth)
             implementation(projects.feature.screen.profile)
+            implementation(projects.feature.screen.note)
+            implementation(projects.core.database)
+            implementation(projects.core.sync)
         }
     }
 }
@@ -85,6 +90,11 @@ android {
     }
 }
 
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
 dependencies {
     debugImplementation(libs.compose.uiTooling)
+    // KSP for Room (composeApp uses database module, which is compiled separately — no KSP needed here)
 }

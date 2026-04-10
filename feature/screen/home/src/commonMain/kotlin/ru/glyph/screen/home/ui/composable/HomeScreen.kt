@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,6 +34,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import ru.glyph.design.Res
 import ru.glyph.design.ic_add
+import ru.glyph.design.ic_description
 import ru.glyph.design.ic_person
 import ru.glyph.design.padding.localPaddingValues
 import ru.glyph.design.theme.GlyphShape
@@ -41,11 +43,11 @@ import ru.glyph.screen.home.ui.HomeScreenPresenter
 import ru.glyph.screen.home.ui.HomeScreenPresenterImpl
 import ru.glyph.screen.home.ui.HomeScreenPresenterPreview
 import ru.glyph.screen.home.ui.HomeScreenViewModel
-import ru.glyph.screen.home.ui.composable.component.HomeFoldersGrid
 import ru.glyph.screen.home.ui.composable.component.HomeNoteItem
 import ru.glyph.screen.home.ui.composable.component.SearchBar
 import ru.glyph.string.resources.home_create_note_cd
-import ru.glyph.string.resources.home_folders_section
+import ru.glyph.string.resources.home_empty_subtitle
+import ru.glyph.string.resources.home_empty_title
 import ru.glyph.string.resources.home_profile_cd
 import ru.glyph.string.resources.home_recent_section
 import ru.glyph.string.resources.Res as StringRes
@@ -94,42 +96,34 @@ private fun HomeScreenContent(
                 )
             }
 
-            // ── Content ─────────────────────────────────────────────────────
+            // ── Notes list ──────────────────────────────────────────────────
             val state by presenter.state.collectAsStateWithLifecycle()
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    start = 24.dp,
-                    end = 24.dp,
-                    top = 24.dp,
-                    bottom = maxOf(24.dp, localPaddingValues.calculateBottomPadding()) + 72.dp,
-                ),
-            ) {
-                item {
-                    Text(
-                        text = stringResource(StringRes.string.home_folders_section),
-                        style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    HomeFoldersGrid(
-                        folders = state.folders,
-                        onFolderClick = presenter::onFolderClick,
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                }
-                item {
-                    Text(
-                        text = stringResource(StringRes.string.home_recent_section),
-                        style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-                items(state.recentNotes, key = { it.id }) { note ->
-                    HomeNoteItem(
-                        note = note,
-                        onClick = { presenter.onNoteClick(note.id) },
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+            if (state.recentNotes.isEmpty()) {
+                NotesEmptyState(modifier = Modifier.fillMaxSize())
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        start = 24.dp,
+                        end = 24.dp,
+                        top = 24.dp,
+                        bottom = maxOf(24.dp, localPaddingValues.calculateBottomPadding()) + 72.dp,
+                    ),
+                ) {
+                    item {
+                        Text(
+                            text = stringResource(StringRes.string.home_recent_section),
+                            style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                    items(state.recentNotes, key = { it.id }) { note ->
+                        HomeNoteItem(
+                            note = note,
+                            onClick = { presenter.onNoteClick(note.id) },
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
             }
         }
@@ -203,6 +197,36 @@ private fun ProfileButton(
             contentDescription = stringResource(StringRes.string.home_profile_cd),
             tint = GlyphTheme.colors.textPrimary,
             modifier = Modifier.size(20.dp),
+        )
+    }
+}
+
+@Composable
+private fun NotesEmptyState(
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            painter = painterResource(Res.drawable.ic_description),
+            contentDescription = null,
+            tint = GlyphTheme.colors.textSubtle,
+            modifier = Modifier.size(64.dp),
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(StringRes.string.home_empty_title),
+            style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(StringRes.string.home_empty_subtitle),
+            style = GlyphTheme.typography.body.copy(color = GlyphTheme.colors.textSecondary),
+            textAlign = TextAlign.Center,
         )
     }
 }
