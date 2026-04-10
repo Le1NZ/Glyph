@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class NoteDto(
-    @SerialName("id") val id: Long = 0,
+    @SerialName("id") val id: String,
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("created_at") val createdAt: Long,
@@ -14,6 +14,7 @@ data class NoteDto(
 
 @Serializable
 data class CreateNoteRequest(
+    @SerialName("id") val id: String,
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("created_at") val createdAt: Long,
