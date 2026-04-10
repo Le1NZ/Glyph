@@ -19,7 +19,7 @@ fun Application.configureDatabase() {
     )
 
     transaction {
-        SchemaUtils.createMissingTablesAndColumns(Users, Notes)
+        SchemaUtils.create(Users, Notes)
     }
 
     log.info("Database connected: $url")

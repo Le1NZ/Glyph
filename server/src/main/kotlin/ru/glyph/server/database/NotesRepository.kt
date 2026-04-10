@@ -21,7 +21,7 @@ object NotesRepository {
             .map { it.toDto() }
     }
 
-    suspend fun getById(id: Long, userId: String): NoteDto? = query {
+    suspend fun getById(id: String, userId: String): NoteDto? = query {
         Notes.selectAll()
             .where { (Notes.id eq id) and (Notes.userYandexId eq userId) }
             .firstOrNull()
@@ -29,21 +29,21 @@ object NotesRepository {
     }
 
     suspend fun create(userId: String, request: CreateNoteRequest): NoteDto = query {
-        val newId = Notes.insert {
+        Notes.insert {
+            it[id] = request.id
             it[userYandexId] = userId
             it[title] = request.title
             it[content] = request.content
             it[createdAt] = request.createdAt
             it[updatedAt] = request.updatedAt
-        }[Notes.id]
-
+        }
         Notes.selectAll()
-            .where { Notes.id eq newId }
+            .where { Notes.id eq request.id }
             .first()
             .toDto()
     }
 
-    suspend fun update(id: Long, userId: String, request: UpdateNoteRequest): NoteDto? = query {
+    suspend fun update(id: String, userId: String, request: UpdateNoteRequest): NoteDto? = query {
         val updated = Notes.update(
             where = { (Notes.id eq id) and (Notes.userYandexId eq userId) }
         ) {
@@ -55,11 +55,10 @@ object NotesRepository {
         Notes.selectAll().where { Notes.id eq id }.firstOrNull()?.toDto()
     }
 
-    suspend fun delete(id: Long, userId: String): Boolean = query {
+    suspend fun delete(id: String, userId: String): Boolean = query {
         Notes.deleteWhere { (Notes.id eq id) and (Notes.userYandexId eq userId) } > 0
     }
 
-    /** Создаёт запись пользователя при первом входе, если её ещё нет. */
     suspend fun ensureUser(yandexId: String) = query {
         val exists = Users.selectAll().where { Users.yandexId eq yandexId }.count() > 0
         if (!exists) {

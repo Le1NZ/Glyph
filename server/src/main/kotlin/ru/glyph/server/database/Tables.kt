@@ -8,7 +8,7 @@ object Users : Table("users") {
 }
 
 object Notes : Table("notes") {
-    val id = long("id").autoIncrement()
+    val id = varchar("id", 36)
     val userYandexId = varchar("user_yandex_id", 255).references(Users.yandexId)
     val title = text("title")
     val content = text("content")

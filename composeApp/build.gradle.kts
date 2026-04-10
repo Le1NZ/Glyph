@@ -5,7 +5,8 @@ val localProperties = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
 val yandexClientId: String = localProperties.getProperty("YANDEX_CLIENT_ID")
-    ?: error("YANDEX_CLIENT_ID is not set in local.properties")
+    ?: System.getenv("YANDEX_CLIENT_ID")
+    ?: ""
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
