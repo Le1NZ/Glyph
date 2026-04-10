@@ -10,8 +10,7 @@ internal interface HomeScreenPresenter {
     val state: StateFlow<HomeUiState>
 
     fun onProfileClick()
-    fun onFolderClick(id: String)
-    fun onNoteClick(id: String)
+    fun onNoteClick(id: Long)
     fun onCreateNoteClick()
     fun onSearchQueryChanged(query: String)
 }
@@ -23,25 +22,10 @@ internal class HomeScreenPresenterImpl(
     override val searchQuery = viewModel.searchQuery
     override val state = viewModel.state
 
-    override fun onProfileClick() {
-        viewModel.onProfileClick()
-    }
-
-    override fun onFolderClick(id: String) {
-
-    }
-
-    override fun onNoteClick(id: String) {
-
-    }
-
-    override fun onCreateNoteClick() {
-
-    }
-
-    override fun onSearchQueryChanged(query: String) {
-        viewModel.onSearchQueryChanged(query)
-    }
+    override fun onProfileClick() = viewModel.onProfileClick()
+    override fun onNoteClick(id: Long) = viewModel.onNoteClick(id)
+    override fun onCreateNoteClick() = viewModel.onCreateNoteClick()
+    override fun onSearchQueryChanged(query: String) = viewModel.onSearchQueryChanged(query)
 }
 
 internal class HomeScreenPresenterPreview : HomeScreenPresenter {
@@ -50,8 +34,7 @@ internal class HomeScreenPresenterPreview : HomeScreenPresenter {
     override val state = MutableStateFlow(HomeUiState.forPreview())
 
     override fun onProfileClick() = Unit
-    override fun onFolderClick(id: String) = Unit
-    override fun onNoteClick(id: String) = Unit
+    override fun onNoteClick(id: Long) = Unit
     override fun onCreateNoteClick() = Unit
     override fun onSearchQueryChanged(query: String) = Unit
 }
