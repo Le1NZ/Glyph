@@ -5,8 +5,7 @@ on:
     branches: [main]
     paths:
       - 'server/**'
-      - 'gradle/libs.versions.toml'
-      - 'settings.gradle.kts'
+      - '.github/workflows/deploy-server.yml'
 
 jobs:
   deploy:
