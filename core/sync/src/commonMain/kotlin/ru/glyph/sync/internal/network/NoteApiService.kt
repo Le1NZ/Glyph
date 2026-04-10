@@ -31,11 +31,11 @@ internal class NoteApiService(
             setBody(note)
         }.body()
 
-    suspend fun update(id: String, note: NoteDto): NoteDto =
+    suspend fun update(id: Long, note: NoteDto): NoteDto =
         client.put("$baseUrl/$id") {
             contentType(ContentType.Application.Json)
             setBody(note)
         }.body()
 
-    suspend fun delete(id: String) = client.delete("$baseUrl/$id")
+    suspend fun delete(id: Long) = client.delete("$baseUrl/$id")
 }

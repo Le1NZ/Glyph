@@ -31,6 +31,9 @@ room = "2.7.0"
 sqlite = "2.5.0"
 ksp = "2.3.6"
 markdownRenderer = "0.40.2"
+exposed = "0.61.0"
+postgresql = "42.7.4"
+logback = "1.5.17"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -76,23 +79,37 @@ koinAndroid = { module = "io.insert-koin:koin-android", version.ref = "koin" }
 # datastore
 datastorePreferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 
-# ktor
+# ktor client
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+
+# ktor server
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+
+# Exposed ORM + PostgreSQL
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
 # yandex auth
 yandexAuthSdk = { module = "com.yandex.android:authsdk", version.ref = "yandexAuthSdk" }
 
 # room
-room-runtime  = { module = "androidx.room:room-runtime",  version.ref = "room" }
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 
 # markdown renderer
-markdownRenderer   = { module = "com.mikepenz:multiplatform-markdown-renderer",    version.ref = "markdownRenderer" }
+markdownRenderer = { module = "com.mikepenz:multiplatform-markdown-renderer", version.ref = "markdownRenderer" }
 markdownRendererM3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "markdownRenderer" }
 
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlinStdlib" }
@@ -109,8 +126,10 @@ kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref =
 androidKotlinMultiplatformLibrary = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 androidLint = { id = "com.android.lint", version.ref = "agp" }
 kotlinxSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-ksp        = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-roomPlugin = { id = "androidx.room",           version.ref = "room" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+roomPlugin = { id = "androidx.room", version.ref = "room" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+ktorServer = { id = "io.ktor.plugin", version.ref = "ktor" }
 
 [bundles]
 compose = ["runtimeCompose", "compose-runtime", "compose-foundation", "compose-ui", "compose-material3", "compose-components-resources", "compose-uiToolingPreview"]
