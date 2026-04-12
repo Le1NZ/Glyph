@@ -11,7 +11,7 @@ internal fun oAuthPlugin(
     onRequest { request, _ ->
         if (!request.headers.contains(HttpHeaders.Authorization)) {
             tokenProvider.getToken()?.let { token ->
-                request.header(HttpHeaders.Authorization, "OAuth $token")
+                request.header("X-Auth-Token", token)
             }
         }
     }

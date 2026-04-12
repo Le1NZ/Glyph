@@ -4,7 +4,7 @@ import androidx.compose.runtime.Immutable
 
 @Immutable
 internal data class NoteUiModel(
-    val id: Long,
+    val id: String,
     val title: String,
     val updatedAt: Long,
     val tags: List<String>,
@@ -13,7 +13,7 @@ internal data class NoteUiModel(
     companion object {
 
         fun forPreview() = NoteUiModel(
-            id = 1L,
+            id = "preview-id",
             title = "Title",
             updatedAt = 1_700_000_000_000L,
             tags = listOf("Tag 1", "Tag 2"),

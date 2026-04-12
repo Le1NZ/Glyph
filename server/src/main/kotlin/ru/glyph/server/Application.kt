@@ -14,6 +14,7 @@ import kotlinx.serialization.json.Json
 import ru.glyph.server.auth.configureAuth
 import ru.glyph.server.database.configureDatabase
 import ru.glyph.server.routes.notesRoutes
+import ru.glyph.server.routes.profileRoutes
 
 fun main() {
     embeddedServer(Netty, port = 8080, module = Application::module).start(wait = true)
@@ -39,5 +40,6 @@ fun Application.module() {
 
     routing {
         notesRoutes()
+        profileRoutes()
     }
 }

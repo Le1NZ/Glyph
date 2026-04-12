@@ -9,33 +9,54 @@ import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import ru.glyph.network.api.ApiConfig
 import ru.glyph.sync.internal.network.dto.NoteDto
 
-/**
- * REST API:
- *   GET    /api/v1/notes          → List<NoteDto>
- *   POST   /api/v1/notes          → NoteDto
- *   PUT    /api/v1/notes/{id}     → NoteDto
- *   DELETE /api/v1/notes/{id}     → 204
- */
-internal class NoteApiService(
-    private val client: HttpClient,
-) {
-    private val baseUrl = "https://api.glyph.ru/api/v1/notes"  // TODO: inject base URL
+internal class NoteApiService(private val client: HttpClient, config: ApiConfig) {
+
+    private val baseUrl = "${config.baseUrl}/api/v1/notes"
 
     suspend fun getAll(): List<NoteDto> = client.get(baseUrl).body()
 
-    suspend fun create(note: NoteDto): NoteDto =
+    suspend fun create(
+        id: String,
+        title: String,
+        content: String,
+        createdAt: Long,
+        updatedAt: Long,
+    ): NoteDto =
         client.post(baseUrl) {
             contentType(ContentType.Application.Json)
-            setBody(note)
+            setBody(CreateNoteRequest(id, title, content, createdAt, updatedAt))
         }.body()
 
-    suspend fun update(id: Long, note: NoteDto): NoteDto =
-        client.put("$baseUrl/$id") {
-            contentType(ContentType.Application.Json)
-            setBody(note)
-        }.body()
+    suspend fun update(
+        id: String,
+        title: String,
+        content: String,
+        updatedAt: Long,
+    ): NoteDto = client.put("$baseUrl/$id") {
+        contentType(ContentType.Application.Json)
+        setBody(UpdateNoteRequest(title, content, updatedAt))
+    }.body()
 
-    suspend fun delete(id: Long) = client.delete("$baseUrl/$id")
+    suspend fun delete(id: String) = client.delete("$baseUrl/$id")
 }
+
+@Serializable
+private data class CreateNoteRequest(
+    @SerialName("id") val id: String,
+    @SerialName("title") val title: String,
+    @SerialName("content") val content: String,
+    @SerialName("created_at") val createdAt: Long,
+    @SerialName("updated_at") val updatedAt: Long,
+)
+
+@Serializable
+private data class UpdateNoteRequest(
+    @SerialName("title") val title: String,
+    @SerialName("content") val content: String,
+    @SerialName("updated_at") val updatedAt: Long,
+)

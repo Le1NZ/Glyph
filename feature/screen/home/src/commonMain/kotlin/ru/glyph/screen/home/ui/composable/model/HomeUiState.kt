@@ -19,8 +19,8 @@ internal data class HomeUiState(
             ),
             recentNotes = listOf(
                 NoteUiModel.forPreview(),
-                NoteUiModel(id = 2L, title = "Архитектура нового модуля", updatedAt = 1_700_000_100_000L, tags = listOf("#разработка")),
-                NoteUiModel(id = 3L, title = "Список книг для чтения", updatedAt = 1_699_000_000_000L, tags = listOf("#личное", "#книги")),
+                NoteUiModel(id = "2L", title = "Архитектура нового модуля", updatedAt = 1_700_000_100_000L, tags = listOf("#разработка")),
+                NoteUiModel(id = "3L", title = "Список книг для чтения", updatedAt = 1_699_000_000_000L, tags = listOf("#личное", "#книги")),
             ),
         )
     }

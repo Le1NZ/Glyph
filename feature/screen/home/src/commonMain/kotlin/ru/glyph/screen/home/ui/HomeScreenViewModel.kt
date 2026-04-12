@@ -39,7 +39,7 @@ internal class HomeScreenViewModel(
         navigator.navigateTo(Screen.Profile)
     }
 
-    fun onNoteClick(id: Long) {
+    fun onNoteClick(id: String) {
         navigator.navigateTo(Screen.Note(id))
     }
 

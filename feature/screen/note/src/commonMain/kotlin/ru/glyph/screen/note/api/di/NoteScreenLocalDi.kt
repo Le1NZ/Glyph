@@ -13,7 +13,11 @@ import ru.glyph.screen.note.ui.composable.NoteScreen
 object NoteScreenLocalDi {
 
     val module = module {
-        factory { (noteId: Long) -> NoteScreenViewModel(noteId, get(), get()) }
+        factory { (noteId: String) -> NoteScreenViewModel(
+            noteId = noteId,
+            notesRepository = get(),
+            navigator = get(),
+        ) }
         navigation<Screen.Note> { screen ->
             NoteScreen(
                 viewModel = koinViewModel<NoteScreenViewModel>(

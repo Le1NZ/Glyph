@@ -10,7 +10,7 @@ object Users : Table("users") {
 object Notes : Table("notes") {
     val id = varchar("id", 36)
     val userYandexId = varchar("user_yandex_id", 255).references(Users.yandexId)
-    val title = text("title")
+    val title = text("title").default("")
     val content = text("content")
     val createdAt = long("created_at")
     val updatedAt = long("updated_at")

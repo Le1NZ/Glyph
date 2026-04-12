@@ -18,8 +18,9 @@ fun Application.configureDatabase() {
         password = password,
     )
 
+    @Suppress("DEPRECATION")
     transaction {
-        SchemaUtils.create(Users, Notes)
+        SchemaUtils.createMissingTablesAndColumns(Users, Notes)
     }
 
     log.info("Database connected: $url")

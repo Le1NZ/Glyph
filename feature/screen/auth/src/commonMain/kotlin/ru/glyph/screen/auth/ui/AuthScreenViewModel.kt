@@ -13,10 +13,12 @@ import ru.glyph.navigation.api.Navigator
 import ru.glyph.navigation.api.model.Screen
 import ru.glyph.screen.auth.ui.composable.model.AuthUiEffect
 import ru.glyph.screen.auth.ui.composable.model.AuthUiState
+import ru.glyph.sync.api.SyncBootstrap
 
 internal class AuthScreenViewModel(
     private val userCenter: UserCenter,
     private val navigator: Navigator,
+    private val syncBootstrap: SyncBootstrap,
 ) : ViewModel() {
 
     private val _effects = MutableSharedFlow<AuthUiEffect>()
@@ -31,15 +33,11 @@ internal class AuthScreenViewModel(
 
             when (userCenter.signIn()) {
                 is SignInResult.Success -> {
-                    navigator.navigateTo(
-                        screen = Screen.Home,
-                        clearBackStack = true,
-                    )
+                    syncBootstrap.pullAll()
+                    navigator.navigateTo(screen = Screen.Home, clearBackStack = true)
                 }
 
-                SignInResult.Cancelled -> {
-                    _state.value = AuthUiState.Ready
-                }
+                SignInResult.Cancelled -> _state.value = AuthUiState.Ready
 
                 is SignInResult.Error -> {
                     _state.value = AuthUiState.Ready

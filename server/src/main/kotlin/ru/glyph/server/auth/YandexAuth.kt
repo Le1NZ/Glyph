@@ -17,6 +17,7 @@ import io.ktor.server.auth.UserIdPrincipal
 import io.ktor.server.auth.bearer
 import kotlinx.serialization.json.Json
 import ru.glyph.server.database.NotesRepository
+import ru.glyph.server.model.UserProfileDto
 import ru.glyph.server.model.YandexUserInfo
 
 private val yandexHttpClient = HttpClient(CIO) {
@@ -40,6 +41,18 @@ fun Application.configureAuth() {
                 UserIdPrincipal(userInfo.id)
             }
         }
+    }
+}
+
+internal suspend fun fetchFullYandexUserInfo(token: String): UserProfileDto? {
+    return try {
+        val response = yandexHttpClient.get("https://login.yandex.ru/info") {
+            header(HttpHeaders.Authorization, "OAuth $token")
+            url { parameters.append("format", "json") }
+        }
+        if (response.status == HttpStatusCode.OK) response.body() else null
+    } catch (_: Exception) {
+        null
     }
 }
 
