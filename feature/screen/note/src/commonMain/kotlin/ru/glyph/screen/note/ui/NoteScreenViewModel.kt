@@ -16,7 +16,7 @@ import ru.glyph.screen.note.ui.state.NoteUiState
 
 @OptIn(FlowPreview::class)
 internal class NoteScreenViewModel(
-    private val noteId: Long,
+    private val noteId: String,
     private val notesRepository: NotesRepository,
     private val navigator: Navigator,
 ) : ViewModel() {
@@ -58,9 +58,6 @@ internal class NoteScreenViewModel(
 
     fun onTogglePreview() {
         val current = _uiState.value as? NoteUiState.Editing ?: return
-        viewModelScope.launch {
-            notesRepository.update(noteId, current.title, current.content)
-        }
         _uiState.value = current.copy(isPreviewMode = !current.isPreviewMode)
     }
 

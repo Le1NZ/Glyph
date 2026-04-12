@@ -12,7 +12,7 @@ import ru.glyph.screen.auth.ui.composable.AuthScreen
 object AuthScreenLocalDi {
 
     val module = module {
-        factory { AuthScreenViewModel(get(), get()) }
+        factory { AuthScreenViewModel(get(), get(), get()) }
         navigation<Screen.Auth> { AuthScreen(viewModel = koinViewModel<AuthScreenViewModel>()) }
     }
 }

@@ -5,9 +5,10 @@ import ru.glyph.database.api.entity.NoteEntity
 
 interface NotesRepository {
     fun observeAll(): Flow<List<NoteEntity>>
-    suspend fun getById(id: Long): NoteEntity?
-    suspend fun create(title: String = "", content: String = ""): Long
-    suspend fun update(id: Long, title: String, content: String)
-    suspend fun delete(id: Long)
+    suspend fun getById(id: String): NoteEntity?
+    suspend fun create(title: String = "", content: String = ""): String
+    suspend fun upsert(id: String, title: String, content: String, createdAt: Long, updatedAt: Long)
+    suspend fun update(id: String, title: String, content: String)
+    suspend fun delete(id: String)
     suspend fun deleteAll()
 }

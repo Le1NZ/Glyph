@@ -7,9 +7,9 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Application.configureDatabase() {
-    val url = environment.config.property("database.url").getString()
-    val user = environment.config.property("database.user").getString()
-    val password = environment.config.property("database.password").getString()
+    val url = checkNotNull(System.getenv("DATABASE_URL")) { "DATABASE_URL is not set" }
+    val user = checkNotNull(System.getenv("DATABASE_USER")) { "DATABASE_USER is not set" }
+    val password = checkNotNull(System.getenv("DATABASE_PASSWORD")) { "DATABASE_PASSWORD is not set" }
 
     Database.connect(
         url = url,
@@ -18,8 +18,9 @@ fun Application.configureDatabase() {
         password = password,
     )
 
+    @Suppress("DEPRECATION")
     transaction {
-        SchemaUtils.create(Users, Notes)
+        SchemaUtils.createMissingTablesAndColumns(Users, Notes)
     }
 
     log.info("Database connected: $url")

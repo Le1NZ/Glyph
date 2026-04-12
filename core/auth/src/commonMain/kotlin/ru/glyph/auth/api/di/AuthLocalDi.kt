@@ -17,7 +17,7 @@ object AuthLocalDi {
     val module: Module = module {
         includes(authPlatformModule())
         single<AuthTokenStorage> { AuthTokenStorageImpl(get()) }
-        single { YandexUserInfoService(get()) }
+        single { YandexUserInfoService(get(), get()) }
         single<UserInfoRepository> { UserInfoRepositoryImpl(inject()) }
         single<UserInfoUseCase> { UserInfoUseCaseImpl(inject()) }
 

@@ -56,6 +56,8 @@ kotlin {
                 implementation(projects.core.design)
                 implementation(projects.core.auth)
                 implementation(projects.core.stringResources)
+                implementation(projects.core.sync)
+                implementation(projects.core.utils)
             }
         }
 

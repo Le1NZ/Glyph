@@ -41,8 +41,10 @@ kotlin {
                 implementation(libs.kotlinxSerializationCore)
                 implementation(libs.ktor.client.core)
 
+                implementation(projects.core.auth)
                 implementation(projects.core.database)
                 implementation(projects.core.network)
+                implementation(projects.core.utils)
             }
         }
     }

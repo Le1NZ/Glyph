@@ -13,13 +13,13 @@ interface NoteDao {
     fun observeAll(): Flow<List<NoteEntity>>
 
     @Query("SELECT * FROM notes WHERE id = :id")
-    suspend fun getById(id: Long): NoteEntity?
+    suspend fun getById(id: String): NoteEntity?
 
     @Upsert
-    suspend fun upsert(note: NoteEntity): Long
+    suspend fun upsert(note: NoteEntity)
 
     @Query("DELETE FROM notes WHERE id = :id")
-    suspend fun deleteById(id: Long)
+    suspend fun deleteById(id: String)
 
     @Query("DELETE FROM notes")
     suspend fun deleteAll()

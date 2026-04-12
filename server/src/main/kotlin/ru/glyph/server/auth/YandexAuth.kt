@@ -8,6 +8,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.auth.HttpAuthHeader
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -16,6 +17,7 @@ import io.ktor.server.auth.UserIdPrincipal
 import io.ktor.server.auth.bearer
 import kotlinx.serialization.json.Json
 import ru.glyph.server.database.NotesRepository
+import ru.glyph.server.model.UserProfileDto
 import ru.glyph.server.model.YandexUserInfo
 
 private val yandexHttpClient = HttpClient(CIO) {
@@ -28,12 +30,29 @@ fun Application.configureAuth() {
     install(Authentication) {
         bearer("yandex") {
             realm = "Glyph API"
+            authHeader { call ->
+                call.request.headers["X-Auth-Token"]?.let { token ->
+                    HttpAuthHeader.Single("Bearer", token)
+                }
+            }
             authenticate { credential ->
                 val userInfo = validateYandexToken(credential.token) ?: return@authenticate null
                 NotesRepository.ensureUser(userInfo.id)
                 UserIdPrincipal(userInfo.id)
             }
         }
+    }
+}
+
+internal suspend fun fetchFullYandexUserInfo(token: String): UserProfileDto? {
+    return try {
+        val response = yandexHttpClient.get("https://login.yandex.ru/info") {
+            header(HttpHeaders.Authorization, "OAuth $token")
+            url { parameters.append("format", "json") }
+        }
+        if (response.status == HttpStatusCode.OK) response.body() else null
+    } catch (_: Exception) {
+        null
     }
 }
 
