@@ -3,10 +3,11 @@ package ru.glyph.sync.internal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import ru.glyph.auth.api.UserCenter
 import ru.glyph.auth.api.model.UserState
 import ru.glyph.database.api.NotesRepository
@@ -25,6 +26,8 @@ internal class SyncObserver(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    private var pullAsyncJob: Job? = null
+
     private val isSyncing = MutableStateFlow(false)
 
     init {
@@ -38,7 +41,14 @@ internal class SyncObserver(
         }
     }
 
+    override fun pullAsync() {
+        pullAsyncJob?.cancel()
+        pullAsyncJob = scope.launch { pullAll() }
+    }
+
     override suspend fun pullAll(): Result<Unit> = runCatching {
+        if (userCenter.authState.value != UserState.Authorized) return@runCatching
+
         isSyncing.value = true
         try {
             val remoteNotes = apiService.getAll()
@@ -62,9 +72,7 @@ internal class SyncObserver(
             .windowedWithPrevious(emptyList())
             .drop(1)
             .collect { (prev, curr) ->
-                if (!isSyncing.value) {
-                    syncChanges(prev, curr)
-                }
+                if (!isSyncing.value) syncChanges(prev, curr)
             }
     }
 

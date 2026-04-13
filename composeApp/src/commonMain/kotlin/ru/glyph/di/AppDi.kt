@@ -1,5 +1,8 @@
 package ru.glyph.di
 
+import org.koin.compose.viewmodel.dsl.viewModel
+import org.koin.dsl.module
+import ru.glyph.AppViewModel
 import ru.glyph.auth.api.di.AuthLocalDi
 import ru.glyph.database.api.di.DatabaseLocalDi
 import ru.glyph.datastore.api.di.DataStoreLocalDi
@@ -14,7 +17,12 @@ import ru.glyph.sync.api.di.SyncLocalDi
 
 internal object AppDi {
 
+    private val appModule = module {
+        viewModel { AppViewModel(get(), get(), get()) }
+    }
+
     val modules = listOf(
+        appModule,
         NavigationDi.module,
         DataStoreLocalDi.module,
         DatabaseLocalDi.module,

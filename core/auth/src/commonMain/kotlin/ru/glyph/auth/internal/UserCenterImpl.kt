@@ -56,6 +56,7 @@ internal class UserCenterImpl(
                     expiresAt = currentTimeDuration().inWholeSeconds + result.expiresIn,
                 )
                 tokenStorage.saveToken(token)
+                authState.value = UserState.Authorized
                 SignInResult.Success
             }
 

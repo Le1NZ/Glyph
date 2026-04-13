@@ -7,6 +7,7 @@ import ru.glyph.design.theme.GlyphFolderColors
 internal data class HomeUiState(
     val folders: List<FolderUiModel> = emptyList(),
     val recentNotes: List<NoteUiModel> = emptyList(),
+    val isRefreshing: Boolean = false,
 ) {
 
     companion object {
