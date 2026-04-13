@@ -14,11 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -61,88 +63,96 @@ internal fun HomeScreen(
     HomeScreenContent(presenter = presenter, modifier = modifier)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeScreenContent(
     presenter: HomeScreenPresenter,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(GlyphTheme.colors.background),
+    val state by presenter.state.collectAsStateWithLifecycle()
+
+    PullToRefreshBox(
+        isRefreshing = state.isRefreshing,
+        onRefresh = presenter::onRefresh,
+        modifier = modifier.fillMaxSize(),
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // ── Header ──────────────────────────────────────────────────────
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(GlyphTheme.colors.surface)
-                    .padding(top = localPaddingValues.calculateTopPadding())
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(GlyphTheme.colors.background),
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // ── Header ──────────────────────────────────────────────────────
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(GlyphTheme.colors.surface)
+                        .padding(top = localPaddingValues.calculateTopPadding())
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
-                    AppLogo()
-                    ProfileButton(onClick = presenter::onProfileClick)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        AppLogo()
+                        ProfileButton(onClick = presenter::onProfileClick)
+                    }
+                    SearchBar(
+                        value = presenter.searchQuery.collectAsStateWithLifecycle().value,
+                        onValueChange = presenter::onSearchQueryChanged,
+                    )
                 }
-                SearchBar(
-                    value = presenter.searchQuery.collectAsStateWithLifecycle().value,
-                    onValueChange = presenter::onSearchQueryChanged,
+
+                // ── Notes list ──────────────────────────────────────────────────
+                if (state.recentNotes.isEmpty()) {
+                    NotesEmptyState(modifier = Modifier.fillMaxSize())
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            start = 24.dp,
+                            end = 24.dp,
+                            top = 24.dp,
+                            bottom = maxOf(24.dp, localPaddingValues.calculateBottomPadding()) + 72.dp,
+                        ),
+                    ) {
+                        item {
+                            Text(
+                                text = stringResource(StringRes.string.home_recent_section),
+                                style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+                        items(state.recentNotes, key = { it.id }) { note ->
+                            HomeNoteItem(
+                                note = note,
+                                onClick = { presenter.onNoteClick(note.id) },
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                }
+            }
+
+            // ── FAB ─────────────────────────────────────────────────────────────
+            FloatingActionButton(
+                onClick = presenter::onCreateNoteClick,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 20.dp, bottom = 20.dp + localPaddingValues.calculateBottomPadding()),
+                containerColor = GlyphTheme.colors.fabBackground,
+                contentColor = GlyphTheme.colors.fabContent,
+                shape = GlyphShape.button,
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_add),
+                    contentDescription = stringResource(StringRes.string.home_create_note_cd),
+                    modifier = Modifier.size(24.dp),
                 )
             }
-
-            // ── Notes list ──────────────────────────────────────────────────
-            val state by presenter.state.collectAsStateWithLifecycle()
-            if (state.recentNotes.isEmpty()) {
-                NotesEmptyState(modifier = Modifier.fillMaxSize())
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        start = 24.dp,
-                        end = 24.dp,
-                        top = 24.dp,
-                        bottom = maxOf(24.dp, localPaddingValues.calculateBottomPadding()) + 72.dp,
-                    ),
-                ) {
-                    item {
-                        Text(
-                            text = stringResource(StringRes.string.home_recent_section),
-                            style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-                    items(state.recentNotes, key = { it.id }) { note ->
-                        HomeNoteItem(
-                            note = note,
-                            onClick = { presenter.onNoteClick(note.id) },
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                }
-            }
-        }
-
-        // ── FAB ─────────────────────────────────────────────────────────────
-        FloatingActionButton(
-            onClick = presenter::onCreateNoteClick,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = 20.dp + localPaddingValues.calculateBottomPadding()),
-            containerColor = GlyphTheme.colors.fabBackground,
-            contentColor = GlyphTheme.colors.fabContent,
-            shape = GlyphShape.button,
-        ) {
-            Icon(
-                painter = painterResource(Res.drawable.ic_add),
-                contentDescription = stringResource(StringRes.string.home_create_note_cd),
-                modifier = Modifier.size(24.dp),
-            )
         }
     }
 }

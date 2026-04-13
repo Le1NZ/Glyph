@@ -13,6 +13,7 @@ internal interface HomeScreenPresenter {
     fun onNoteClick(id: String)
     fun onCreateNoteClick()
     fun onSearchQueryChanged(query: String)
+    fun onRefresh()
 }
 
 internal class HomeScreenPresenterImpl(
@@ -26,6 +27,7 @@ internal class HomeScreenPresenterImpl(
     override fun onNoteClick(id: String) = viewModel.onNoteClick(id)
     override fun onCreateNoteClick() = viewModel.onCreateNoteClick()
     override fun onSearchQueryChanged(query: String) = viewModel.onSearchQueryChanged(query)
+    override fun onRefresh() = viewModel.onRefresh()
 }
 
 internal class HomeScreenPresenterPreview : HomeScreenPresenter {
@@ -37,4 +39,5 @@ internal class HomeScreenPresenterPreview : HomeScreenPresenter {
     override fun onNoteClick(id: String) = Unit
     override fun onCreateNoteClick() = Unit
     override fun onSearchQueryChanged(query: String) = Unit
+    override fun onRefresh() = Unit
 }
