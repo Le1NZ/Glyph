@@ -74,6 +74,7 @@ android {
         versionCode = 1
         versionName = "1.0"
         manifestPlaceholders["YANDEX_CLIENT_ID"] = yandexClientId
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     packaging {
         resources {
@@ -89,6 +90,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    sourceSets {
+        getByName("androidTest") {
+            manifest.srcFile("src/androidTest/AndroidManifest.xml")
+        }
+    }
 }
 
 room {
@@ -98,4 +104,10 @@ room {
 dependencies {
     debugImplementation(libs.compose.uiTooling)
     // KSP for Room (composeApp uses database module, which is compiled separately — no KSP needed here)
+
+    // Tests
+    androidTestImplementation(libs.androidx.runner)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.ktor.client.mock)
 }

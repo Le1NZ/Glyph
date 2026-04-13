@@ -82,7 +82,7 @@ internal fun NoteScreen(
 }
 
 @Composable
-private fun NoteScreenContent(
+internal fun NoteScreenContent(
     uiState: NoteUiState,
     onTitleChange: (String) -> Unit,
     onContentChange: (String) -> Unit,

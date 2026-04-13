@@ -11,6 +11,9 @@ kotlin {
         namespace = "ru.glyph.sync"
         compileSdk = 36
         minSdk = 26
+
+        withHostTestBuilder {
+        }
     }
 
     val xcfName = "core:syncKit"
@@ -45,6 +48,14 @@ kotlin {
                 implementation(projects.core.database)
                 implementation(projects.core.network)
                 implementation(projects.core.utils)
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.coroutines.test)
+                implementation(libs.turbine)
             }
         }
     }
