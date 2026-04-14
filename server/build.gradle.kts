@@ -32,4 +32,11 @@ dependencies {
     implementation(libs.postgresql)
     implementation(libs.logback)
     implementation(libs.kotlinxSerializationCore)
+
+    testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.ktor.client.content.negotiation)
+    testImplementation(libs.ktor.serialization.json)
+    testImplementation(libs.h2)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.coroutines.test)
 }

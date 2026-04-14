@@ -65,7 +65,7 @@ internal fun HomeScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HomeScreenContent(
+internal fun HomeScreenContent(
     presenter: HomeScreenPresenter,
     modifier: Modifier = Modifier,
 ) {

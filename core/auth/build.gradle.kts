@@ -66,6 +66,14 @@ kotlin {
             }
         }
 
+        commonTest {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.coroutines.test)
+                implementation(libs.turbine)
+            }
+        }
+
         getByName("androidDeviceTest") {
             dependencies {
                 implementation(libs.androidx.runner)

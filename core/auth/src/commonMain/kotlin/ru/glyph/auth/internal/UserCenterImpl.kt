@@ -20,9 +20,8 @@ import ru.glyph.utils.flow.mapState
 internal class UserCenterImpl(
     private val platformAuthProvider: PlatformAuthProvider,
     private val tokenStorage: AuthTokenStorage,
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) : UserCenter {
-
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val tokenState = tokenStorage.token
         .stateIn(

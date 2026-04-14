@@ -7,6 +7,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 import ru.glyph.auth.api.UserCenter
 import ru.glyph.auth.api.model.UserState
@@ -22,9 +24,8 @@ internal class SyncObserver(
     private val notesRepository: NotesRepository,
     private val apiService: NoteApiService,
     private val userCenter: UserCenter,
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) : SyncBootstrap {
-
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private var pullAsyncJob: Job? = null
 
@@ -68,12 +69,12 @@ internal class SyncObserver(
     }
 
     private suspend fun observeDbAndPush() {
-        notesRepository.observeAll()
-            .windowedWithPrevious(emptyList())
-            .drop(1)
-            .collect { (prev, curr) ->
-                if (!isSyncing.value) syncChanges(prev, curr)
+        isSyncing
+            .flatMapLatest { syncing ->
+                if (syncing) emptyFlow()
+                else notesRepository.observeAll().windowedWithPrevious(emptyList()).drop(1)
             }
+            .collect { (prev, curr) -> syncChanges(prev, curr) }
     }
 
     private suspend fun syncChanges(prev: List<NoteEntity>, curr: List<NoteEntity>) {

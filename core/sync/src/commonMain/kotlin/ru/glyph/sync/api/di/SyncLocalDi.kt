@@ -5,10 +5,11 @@ import org.koin.dsl.module
 import ru.glyph.sync.api.SyncBootstrap
 import ru.glyph.sync.internal.SyncObserver
 import ru.glyph.sync.internal.network.NoteApiService
+import ru.glyph.sync.internal.network.NoteApiServiceImpl
 
 object SyncLocalDi {
     val module = module {
-        single { NoteApiService(get(), get()) }
+        single<NoteApiService> { NoteApiServiceImpl(get(), get()) }
         single(createdAtStart = true) {
             SyncObserver(
                 notesRepository = get(),

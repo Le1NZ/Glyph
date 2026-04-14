@@ -16,12 +16,6 @@ kotlin {
 
         withHostTestBuilder {
         }
-
-        withDeviceTestBuilder {
-            sourceSetTreeName = "test"
-        }.configure {
-            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        }
     }
 
     val xcfName = "feature:screen:noteKit"
@@ -63,22 +57,8 @@ kotlin {
             }
         }
 
-        commonTest {
-            dependencies {
-                implementation(libs.kotlin.test)
-            }
-        }
-
         androidMain {
             dependencies {
-            }
-        }
-
-        getByName("androidDeviceTest") {
-            dependencies {
-                implementation(libs.androidx.runner)
-                implementation(libs.androidx.core)
-                implementation(libs.androidx.junit)
             }
         }
 
