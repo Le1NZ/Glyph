@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import ru.glyph.database.api.NotesRepository
-import ru.glyph.database.api.entity.NoteEntity
+import ru.glyph.model.Note
 import ru.glyph.navigation.api.Navigator
 import ru.glyph.navigation.api.model.Screen
 import ru.glyph.screen.home.ui.composable.model.HomeUiState
@@ -68,7 +68,7 @@ internal class HomeScreenViewModel(
         }
     }
 
-    private fun NoteEntity.toUiModel() = NoteUiModel(
+    private fun Note.toUiModel() = NoteUiModel(
         id = id,
         title = title,
         updatedAt = updatedAt,

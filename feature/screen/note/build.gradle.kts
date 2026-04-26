@@ -49,6 +49,7 @@ kotlin {
                 implementation(projects.core.navigation)
                 implementation(projects.core.design)
                 implementation(projects.core.database)
+                implementation(projects.core.model)
                 implementation(projects.core.utils)
                 implementation(projects.core.stringResources)
 

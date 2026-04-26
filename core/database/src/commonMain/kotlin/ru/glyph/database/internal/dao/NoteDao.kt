@@ -1,13 +1,13 @@
-package ru.glyph.database.api.dao
+package ru.glyph.database.internal.dao
 
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
-import ru.glyph.database.api.entity.NoteEntity
+import ru.glyph.database.internal.entity.NoteEntity
 
 @Dao
-interface NoteDao {
+internal interface NoteDao {
 
     @Query("SELECT * FROM notes ORDER BY updatedAt DESC")
     fun observeAll(): Flow<List<NoteEntity>>

@@ -1,39 +1,71 @@
 package ru.glyph.database.internal
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import ru.glyph.database.api.NotesRepository
+import ru.glyph.database.internal.converter.toDomain
+import ru.glyph.database.internal.converter.toEntity
+import ru.glyph.database.internal.dao.NoteDao
+import ru.glyph.database.internal.entity.NoteEntity
+import ru.glyph.model.Note
+import ru.glyph.utils.clock.currentTimeDuration
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
-import ru.glyph.database.api.NotesRepository
-import ru.glyph.database.api.dao.NoteDao
-import ru.glyph.database.api.entity.NoteEntity
-import ru.glyph.utils.clock.currentTimeDuration
 
 @OptIn(ExperimentalUuidApi::class)
 internal class NotesRepositoryImpl(
     private val dao: NoteDao,
 ) : NotesRepository {
 
-    override fun observeAll(): Flow<List<NoteEntity>> = dao.observeAll()
+    override fun observeAll(): Flow<List<Note>> {
+        return dao.observeAll()
+            .map { notes -> notes.map(NoteEntity::toDomain) }
+    }
 
-    override suspend fun getById(id: String): NoteEntity? = dao.getById(id)
+    override suspend fun getById(id: String): Note? {
+        return dao.getById(id)?.toDomain()
+    }
 
-    override suspend fun create(title: String, content: String): String {
+    override suspend fun create(
+        title: String,
+        content: String,
+    ): String {
         val id = Uuid.random().toString()
         val now = currentTimeDuration().inWholeMilliseconds
-        dao.upsert(NoteEntity(id = id, title = title, content = content, createdAt = now, updatedAt = now))
+
+        val note = NoteEntity(
+            id = id,
+            title = title,
+            content = content,
+            createdAt = now,
+            updatedAt = now,
+        )
+
+        dao.upsert(note)
         return id
     }
 
-    override suspend fun upsert(id: String, title: String, content: String, createdAt: Long, updatedAt: Long) {
-        dao.upsert(NoteEntity(id = id, title = title, content = content, createdAt = createdAt, updatedAt = updatedAt))
+    override suspend fun upsert(
+        note: Note,
+    ) {
+        dao.upsert(note.toEntity())
     }
 
-    override suspend fun update(id: String, title: String, content: String) {
+    override suspend fun update(
+        id: String,
+        title: String,
+        content: String,
+    ) {
         val existing = dao.getById(id) ?: return
-        dao.upsert(existing.copy(title = title, content = content, updatedAt = currentTimeDuration().inWholeMilliseconds))
+        val updated = existing.copy(
+            title = title,
+            content = content,
+            updatedAt = currentTimeDuration().inWholeMilliseconds,
+        )
+
+        dao.upsert(updated)
     }
 
     override suspend fun delete(id: String) = dao.deleteById(id)
-
     override suspend fun deleteAll() = dao.deleteAll()
 }

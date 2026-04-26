@@ -18,7 +18,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,6 +37,7 @@ import com.mikepenz.markdown.m3.markdownTypography
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import ru.glyph.design.Res
+import ru.glyph.design.components.LoadingScreen
 import ru.glyph.design.ic_arrow_back
 import ru.glyph.design.ic_delete
 import ru.glyph.design.ic_edit
@@ -69,21 +69,24 @@ internal fun NoteScreen(
     viewModel: NoteScreenViewModel,
     modifier: Modifier = Modifier,
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    NoteScreenContent(
-        uiState = uiState,
-        onTitleChange = viewModel::onTitleChange,
-        onContentChange = viewModel::onContentChange,
-        onTogglePreview = viewModel::onTogglePreview,
-        onDeleteClick = viewModel::onDeleteClick,
-        onBackClick = viewModel::onBackClick,
-        modifier = modifier,
-    )
+    when (val state = viewModel.uiState.collectAsStateWithLifecycle().value) {
+        is NoteUiState.Loading -> LoadingScreen()
+
+        is NoteUiState.Editing -> NoteScreenContent(
+            state = state,
+            onTitleChange = viewModel::onTitleChange,
+            onContentChange = viewModel::onContentChange,
+            onTogglePreview = viewModel::onTogglePreview,
+            onDeleteClick = viewModel::onDeleteClick,
+            onBackClick = viewModel::onBackClick,
+            modifier = modifier,
+        )
+    }
 }
 
 @Composable
 internal fun NoteScreenContent(
-    uiState: NoteUiState,
+    state: NoteUiState.Editing,
     onTitleChange: (String) -> Unit,
     onContentChange: (String) -> Unit,
     onTogglePreview: () -> Unit,
@@ -91,14 +94,8 @@ internal fun NoteScreenContent(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val editingState = uiState as? NoteUiState.Editing
-
-    // Local TextFieldValue state — owns cursor position and selection for the editor
-    var contentTFV by remember { mutableStateOf(TextFieldValue()) }
-    var contentInitialized by remember { mutableStateOf(false) }
-    if (editingState != null && !contentInitialized) {
-        contentInitialized = true
-        contentTFV = TextFieldValue(editingState.content)
+    var textFieldContent by remember {
+        mutableStateOf(TextFieldValue(state.content))
     }
 
     val bottomPadding = localPaddingValues.calculateBottomPadding()
@@ -111,17 +108,15 @@ internal fun NoteScreenContent(
             .consumeWindowInsets(paddingValues)
             .imePadding(),
     ) {
-        // ── TopBar ──────────────────────────────────────────────────────────
         NoteTopBar(
-            title = editingState?.title ?: "",
-            isPreviewMode = editingState?.isPreviewMode ?: false,
+            title = state.title,
+            isPreviewMode = state.isPreviewMode,
             onBackClick = onBackClick,
             onTogglePreview = onTogglePreview,
             onDeleteClick = onDeleteClick,
         )
 
-        // ── Body ────────────────────────────────────────────────────────────
-        when (uiState) {
+        when (state) {
             NoteUiState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = GlyphTheme.colors.accent)
@@ -129,26 +124,34 @@ internal fun NoteScreenContent(
             }
 
             is NoteUiState.Editing -> {
-                if (uiState.isPreviewMode) {
+                if (state.isPreviewMode) {
                     NotePreview(
-                        content = uiState.content,
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        content = state.content,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
                     )
                 } else {
                     NoteEditor(
-                        title = uiState.title,
-                        contentTFV = contentTFV,
+                        title = state.title,
+                        contentTFV = textFieldContent,
                         onTitleChange = onTitleChange,
-                        onContentChange = { newTFV ->
-                            val processed = applyMarkdownContinuation(contentTFV, newTFV)
-                            contentTFV = processed
+                        onContentChange = { newTextFieldContent ->
+                            val processed = applyMarkdownContinuation(
+                                old = textFieldContent,
+                                new = newTextFieldContent,
+                            )
+
+                            textFieldContent = processed
                             onContentChange(processed.text)
                         },
-                        onShortcut = { newTFV ->
-                            contentTFV = newTFV
-                            onContentChange(newTFV.text)
+                        onShortcut = { newTextFieldContent ->
+                            textFieldContent = newTextFieldContent
+                            onContentChange(newTextFieldContent.text)
                         },
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
                     )
                 }
             }
@@ -184,7 +187,11 @@ private fun NoteTopBar(
         Text(
             text = title.ifBlank { stringResource(StringRes.string.note_title_placeholder) },
             style = GlyphTheme.typography.heading2.copy(
-                color = if (title.isBlank()) GlyphTheme.colors.textSecondary else GlyphTheme.colors.textPrimary,
+                color = if (title.isBlank()) {
+                    GlyphTheme.colors.textSecondary
+                } else {
+                    GlyphTheme.colors.textPrimary
+                },
             ),
             maxLines = 1,
             modifier = Modifier
@@ -229,7 +236,6 @@ private fun NoteEditor(
     val contentPlaceholder = stringResource(StringRes.string.note_placeholder)
 
     Column(modifier = modifier) {
-        // ── Title field ──────────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -263,8 +269,11 @@ private fun NoteEditor(
             modifier = Modifier.padding(horizontal = 20.dp),
         )
 
-        // ── Content field ────────────────────────────────────────────────────
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+        ) {
             BasicTextField(
                 value = contentTFV,
                 onValueChange = onContentChange,
@@ -289,7 +298,6 @@ private fun NoteEditor(
             )
         }
 
-        // ── Markdown shortcuts bar ───────────────────────────────────────────
         MarkdownShortcutsBar(
             contentTFV = contentTFV,
             onApply = onShortcut,
@@ -357,32 +365,28 @@ private fun NotePreview(
     content: String,
     modifier: Modifier = Modifier,
 ) {
-    MaterialTheme {
-        Column(
-            modifier = modifier
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-        ) {
-            Markdown(
-                content = content,
-                colors = markdownColor(
-                    text = GlyphTheme.colors.textPrimary,
-                    codeBackground = GlyphTheme.colors.surfaceVariant,
-                    inlineCodeBackground = GlyphTheme.colors.surfaceVariant,
-                ),
-                typography = markdownTypography(
-                    text = GlyphTheme.typography.body,
-                    h1 = GlyphTheme.typography.heading1,
-                    h2 = GlyphTheme.typography.heading2,
-                    h3 = GlyphTheme.typography.heading3,
-                    paragraph = GlyphTheme.typography.body,
-                ),
-            )
-        }
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+    ) {
+        Markdown(
+            content = content,
+            colors = markdownColor(
+                text = GlyphTheme.colors.textPrimary,
+                codeBackground = GlyphTheme.colors.surfaceVariant,
+                inlineCodeBackground = GlyphTheme.colors.surfaceVariant,
+            ),
+            typography = markdownTypography(
+                text = GlyphTheme.typography.body,
+                h1 = GlyphTheme.typography.heading1,
+                h2 = GlyphTheme.typography.heading2,
+                h3 = GlyphTheme.typography.heading3,
+                paragraph = GlyphTheme.typography.body,
+            ),
+        )
     }
 }
-
-// ── Markdown editing helpers ─────────────────────────────────────────────────
 
 /** Wraps the current selection in [prefix] + [suffix]. If no selection, inserts markers at cursor. */
 private fun wrapSelection(

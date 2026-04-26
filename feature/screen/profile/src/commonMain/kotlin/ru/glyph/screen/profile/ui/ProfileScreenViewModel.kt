@@ -2,6 +2,7 @@ package ru.glyph.screen.profile.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,6 +25,8 @@ internal class ProfileScreenViewModel(
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
+    private var loadJob: Job? = null
+
     init {
         loadUserInfo()
     }
@@ -35,15 +38,24 @@ internal class ProfileScreenViewModel(
         }
     }
 
+    fun onRetryClick() {
+        _uiState.value = ProfileUiState.Loading
+        loadUserInfo()
+    }
+
     fun onBackClick() {
         navigator.popBackStack()
     }
 
     private fun loadUserInfo() {
-        viewModelScope.launch {
-            _uiState.value = when (val result = userInfoUseCase.invoke()) {
-                is ConvertedResult.Success -> ProfileUiState.Success(result.value.toUiModel())
-                ConvertedResult.Error -> ProfileUiState.Error
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            _uiState.value = when (val result = userInfoUseCase()) {
+                is ConvertedResult.Success -> ProfileUiState.Success(
+                    user = result.value.toUiModel(),
+                )
+
+                is ConvertedResult.Error -> ProfileUiState.Error
             }
         }
     }
@@ -54,7 +66,7 @@ internal class ProfileScreenViewModel(
             lastName?.firstOrNull()?.let(::append)
         }.ifEmpty { displayName.take(1).uppercase() },
         displayName = displayName,
-        email = email,
+        email = email.takeIf { !it.isNullOrBlank() },
         avatarUrl = avatarUrl,
     )
 }

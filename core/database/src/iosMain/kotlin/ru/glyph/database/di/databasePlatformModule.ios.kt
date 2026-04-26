@@ -7,7 +7,7 @@ import org.koin.dsl.module
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
 import platform.Foundation.NSUserDomainMask
-import ru.glyph.database.api.GlyphDatabase
+import ru.glyph.database.internal.GlyphDatabase
 
 internal actual fun databasePlatformModule() = module {
     single<GlyphDatabase> {

@@ -46,6 +46,7 @@ kotlin {
 
                 implementation(projects.core.auth)
                 implementation(projects.core.database)
+                implementation(projects.core.model)
                 implementation(projects.core.network)
                 implementation(projects.core.utils)
             }

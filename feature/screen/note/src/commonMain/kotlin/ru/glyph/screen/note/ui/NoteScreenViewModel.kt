@@ -2,7 +2,9 @@ package ru.glyph.screen.note.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
@@ -13,6 +15,8 @@ import kotlinx.coroutines.launch
 import ru.glyph.database.api.NotesRepository
 import ru.glyph.navigation.api.Navigator
 import ru.glyph.screen.note.ui.state.NoteUiState
+import ru.glyph.utils.flow.collectIn
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(FlowPreview::class)
 internal class NoteScreenViewModel(
@@ -34,16 +38,14 @@ internal class NoteScreenViewModel(
             )
         }
 
-        viewModelScope.launch {
-            _uiState
-                .filterIsInstance<NoteUiState.Editing>()
-                .map { it.title to it.content }
-                .distinctUntilChanged()
-                .debounce(700)
-                .collect { (title, content) ->
-                    notesRepository.update(noteId, title, content)
-                }
-        }
+        uiState
+            .filterIsInstance<NoteUiState.Editing>()
+            .map { it.title to it.content }
+            .distinctUntilChanged()
+            .debounce(1.seconds)
+            .collectIn(viewModelScope) { (title, content) ->
+                notesRepository.update(noteId, title, content)
+            }
     }
 
     fun onTitleChange(title: String) {
@@ -69,14 +71,29 @@ internal class NoteScreenViewModel(
     }
 
     fun onBackClick() {
-        val current = _uiState.value as? NoteUiState.Editing
-        if (current != null) {
-            viewModelScope.launch {
-                notesRepository.update(noteId, current.title, current.content)
-                navigator.popBackStack()
+        navigator.popBackStack()
+    }
+
+    private suspend fun updateToActual(
+        state: NoteUiState.Editing,
+    ) {
+        notesRepository.update(
+            id = noteId,
+            title = state.title,
+            content = state.content,
+        )
+    }
+
+    @OptIn(DelicateCoroutinesApi::class)
+    override fun onCleared() {
+        when (val state = uiState.value) {
+            is NoteUiState.Editing -> GlobalScope.launch {
+                updateToActual(state)
             }
-        } else {
-            navigator.popBackStack()
+
+            is NoteUiState.Loading -> Unit
         }
+
+        super.onCleared()
     }
 }

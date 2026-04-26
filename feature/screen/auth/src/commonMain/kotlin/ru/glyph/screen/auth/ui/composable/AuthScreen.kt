@@ -6,13 +6,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -28,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.jetbrains.compose.resources.stringResource
+import ru.glyph.design.components.LoadingPrimaryButton
 import ru.glyph.design.theme.GlyphShape
 import ru.glyph.design.theme.GlyphTheme
 import ru.glyph.screen.auth.ui.AuthScreenViewModel
@@ -106,34 +103,11 @@ internal fun AuthScreen(
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            Button(
+            LoadingPrimaryButton(
+                text = stringResource(StringRes.string.auth_sign_in_button),
                 onClick = viewModel::onSignInClick,
-                enabled = when (state) {
-                    is AuthUiState.Loading -> false
-                    is AuthUiState.Ready -> true
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = GlyphShape.button,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = GlyphTheme.colors.accent,
-                    contentColor = GlyphTheme.colors.contentOnAccent,
-                ),
-            ) {
-                when (state) {
-                    is AuthUiState.Loading -> CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = GlyphTheme.colors.contentOnAccent,
-                        strokeWidth = 2.dp,
-                    )
-
-                    is AuthUiState.Ready -> Text(
-                        text = stringResource(StringRes.string.auth_sign_in_button),
-                        style = GlyphTheme.typography.body.copy(fontWeight = FontWeight.Medium),
-                    )
-                }
-            }
+                loading = state is AuthUiState.Loading,
+            )
         }
 
         SnackbarHost(

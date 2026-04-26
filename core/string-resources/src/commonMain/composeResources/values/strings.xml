@@ -1,4 +1,8 @@
 <resources>
+    <!-- Design -->
+    <string name="error_text">Что-то пошло не так…</string>
+    <string name="error_retry_button">Повторить</string>
+
     <!-- Home screen -->
     <string name="home_search_placeholder">Поиск заметок…</string>
     <string name="home_folders_section">Папки</string>
