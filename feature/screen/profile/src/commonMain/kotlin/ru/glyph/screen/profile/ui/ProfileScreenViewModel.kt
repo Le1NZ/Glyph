@@ -2,17 +2,22 @@ package ru.glyph.screen.profile.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import ru.glyph.auth.api.UserCenter
 import ru.glyph.auth.api.UserInfoUseCase
 import ru.glyph.auth.api.model.UserInfo
 import ru.glyph.navigation.api.Navigator
+import ru.glyph.navigation.api.model.BottomSheet
 import ru.glyph.navigation.api.model.Screen
 import ru.glyph.screen.profile.ui.state.ProfileUiState
 import ru.glyph.screen.profile.ui.state.UserUiModel
+import ru.glyph.string.resources.Res
+import ru.glyph.string.resources.profile_sign_out_confirmation
 import ru.glyph.utils.ConvertedResult
 
 internal class ProfileScreenViewModel(
@@ -24,15 +29,29 @@ internal class ProfileScreenViewModel(
     private val _uiState = MutableStateFlow<ProfileUiState>(ProfileUiState.Loading)
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
+    private var loadJob: Job? = null
+
     init {
         loadUserInfo()
     }
 
     fun onSignOutClick() {
-        viewModelScope.launch {
-            userCenter.signOut()
-            navigator.navigateTo(Screen.Auth, clearBackStack = true)
-        }
+        navigator.showOverlay(
+            overlay = BottomSheet.Confirm(
+                text = { stringResource(Res.string.profile_sign_out_confirmation) },
+                onConfirm = {
+                    viewModelScope.launch {
+                        userCenter.signOut()
+                        navigator.navigateTo(Screen.Auth, clearBackStack = true)
+                    }
+                }
+            ),
+        )
+    }
+
+    fun onRetryClick() {
+        _uiState.value = ProfileUiState.Loading
+        loadUserInfo()
     }
 
     fun onBackClick() {
@@ -40,10 +59,14 @@ internal class ProfileScreenViewModel(
     }
 
     private fun loadUserInfo() {
-        viewModelScope.launch {
-            _uiState.value = when (val result = userInfoUseCase.invoke()) {
-                is ConvertedResult.Success -> ProfileUiState.Success(result.value.toUiModel())
-                ConvertedResult.Error -> ProfileUiState.Error
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            _uiState.value = when (val result = userInfoUseCase()) {
+                is ConvertedResult.Success -> ProfileUiState.Success(
+                    user = result.value.toUiModel(),
+                )
+
+                is ConvertedResult.Error -> ProfileUiState.Error
             }
         }
     }
@@ -54,7 +77,7 @@ internal class ProfileScreenViewModel(
             lastName?.firstOrNull()?.let(::append)
         }.ifEmpty { displayName.take(1).uppercase() },
         displayName = displayName,
-        email = email,
+        email = email.takeIf { !it.isNullOrBlank() },
         avatarUrl = avatarUrl,
     )
 }

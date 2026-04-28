@@ -1,10 +1,10 @@
-package ru.glyph.database.api.entity
+package ru.glyph.database.internal.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "notes")
-data class NoteEntity(
+internal data class NoteEntity(
     @PrimaryKey val id: String,
     val title: String,
     val content: String,

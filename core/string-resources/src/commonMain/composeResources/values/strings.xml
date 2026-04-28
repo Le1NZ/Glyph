@@ -1,4 +1,8 @@
 <resources>
+    <!-- Design -->
+    <string name="error_text">Что-то пошло не так…</string>
+    <string name="error_retry_button">Повторить</string>
+
     <!-- Home screen -->
     <string name="home_search_placeholder">Поиск заметок…</string>
     <string name="home_folders_section">Папки</string>
@@ -25,15 +29,17 @@
     <string name="md_code_cd">Код</string>
     <string name="md_list_cd">Список</string>
     <string name="md_heading_cd">Заголовок</string>
+    <string name="note_delete_confirmation">Вы уверены, что хотите удалить заметку?</string>
 
     <!-- Profile screen -->
     <string name="profile_title">Профиль</string>
     <string name="profile_sign_out">Выйти</string>
     <string name="profile_back_cd">Назад</string>
+    <string name="profile_sign_out_confirmation">Вы уверены, что хотите выйти?</string>
 
     <!-- Home empty state -->
     <string name="home_empty_title">Нет заметок</string>
-    <string name="home_empty_subtitle">Нажми + чтобы создать первую заметку</string>
+    <string name="home_empty_subtitle">Нажми +, чтобы создать первую заметку</string>
 
     <!-- Relative time -->
     <string name="time_just_now">Только что</string>
@@ -48,4 +54,9 @@
         <item quantity="many">%1$d заметок</item>
         <item quantity="other">%1$d заметок</item>
     </plurals>
+
+    <!-- Confirm bottom sheet -->
+    <string name="confirm_bottom_sheet_primary_action">Продолжить</string>
+    <string name="confirm_bottom_sheet_secondary_action">Отмена</string>
+
 </resources>

@@ -51,6 +51,8 @@ kotlin {
                 implementation(libs.kotlin.stdlib)
                 implementation(libs.coilCompose)
                 implementation(libs.coilNetwork)
+
+                implementation(projects.core.stringResources)
             }
         }
 

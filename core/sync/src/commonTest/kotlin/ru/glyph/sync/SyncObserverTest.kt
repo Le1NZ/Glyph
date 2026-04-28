@@ -4,7 +4,6 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -14,7 +13,7 @@ import ru.glyph.auth.api.UserCenter
 import ru.glyph.auth.api.model.SignInResult
 import ru.glyph.auth.api.model.UserState
 import ru.glyph.database.api.NotesRepository
-import ru.glyph.database.api.entity.NoteEntity
+import ru.glyph.model.Note
 import ru.glyph.sync.internal.SyncObserver
 import ru.glyph.sync.internal.network.NoteApiService
 import ru.glyph.sync.internal.network.dto.NoteDto
@@ -28,29 +27,28 @@ class SyncObserverTest {
     // ─── Fakes ───────────────────────────────────────────────────────────────
 
     private class FakeNotesRepository : NotesRepository {
-        private val _notes = MutableStateFlow<List<NoteEntity>>(emptyList())
+        private val _notes = MutableStateFlow<List<Note>>(emptyList())
 
-        val upsertCalls = mutableListOf<NoteEntity>()
+        val upsertCalls = mutableListOf<Note>()
         var deleteAllCallCount = 0
 
-        override fun observeAll(): Flow<List<NoteEntity>> = _notes.asStateFlow()
+        override fun observeAll(): Flow<List<Note>> = _notes.asStateFlow()
 
         override suspend fun getById(id: String) = _notes.value.find { it.id == id }
 
         override suspend fun create(title: String, content: String): String {
             val id = "gen-${_notes.value.size}"
-            _notes.value = _notes.value + NoteEntity(id, title, content, 0L, 0L)
+            _notes.value += Note(id, title, content, 0L, 0L)
             return id
         }
 
         override suspend fun upsert(
-            id: String, title: String, content: String, createdAt: Long, updatedAt: Long,
+            note: Note,
         ) {
-            val entity = NoteEntity(id, title, content, createdAt, updatedAt)
-            upsertCalls.add(entity)
+            upsertCalls.add(note)
             val list = _notes.value.toMutableList()
-            val idx = list.indexOfFirst { it.id == id }
-            if (idx >= 0) list[idx] = entity else list.add(entity)
+            val idx = list.indexOfFirst { it.id == note.id }
+            if (idx >= 0) list[idx] = note else list.add(note)
             _notes.value = list
         }
 
@@ -70,7 +68,7 @@ class SyncObserverTest {
             _notes.value = emptyList()
         }
 
-        fun emit(notes: List<NoteEntity>) {
+        fun emit(notes: List<Note>) {
             _notes.value = notes
         }
     }
@@ -97,7 +95,12 @@ class SyncObserverTest {
             return NoteDto(id, title, content, createdAt, updatedAt)
         }
 
-        override suspend fun update(id: String, title: String, content: String, updatedAt: Long): NoteDto {
+        override suspend fun update(
+            id: String,
+            title: String,
+            content: String,
+            updatedAt: Long
+        ): NoteDto {
             updateCalls.add(id)
             return NoteDto(id, title, content, 0L, updatedAt)
         }
@@ -113,13 +116,15 @@ class SyncObserverTest {
         override val authState = MutableStateFlow(initialState)
         override fun getToken() = if (authState.value == UserState.Authorized) "token" else null
         override suspend fun signIn() = SignInResult.Success
-        override suspend fun signOut() { authState.value = UserState.NotAuthorized }
+        override suspend fun signOut() {
+            authState.value = UserState.NotAuthorized
+        }
     }
 
     // ─── Helper ──────────────────────────────────────────────────────────────
 
     private fun note(id: String, updatedAt: Long = 0L) =
-        NoteEntity(id, "Title $id", "Content $id", 0L, updatedAt)
+        Note(id, "Title $id", "Content $id", 0L, updatedAt)
 
     private fun dto(id: String, updatedAt: Long = 0L) =
         NoteDto(id, "Title $id", "Content $id", 0L, updatedAt)
@@ -162,10 +167,23 @@ class SyncObserverTest {
         val notesRepo = FakeNotesRepository()
         val apiService = object : NoteApiService {
             override suspend fun getAll(): List<NoteDto> = throw RuntimeException("network error")
-            override suspend fun create(id: String, title: String, content: String, createdAt: Long, updatedAt: Long) =
+            override suspend fun create(
+                id: String,
+                title: String,
+                content: String,
+                createdAt: Long,
+                updatedAt: Long
+            ) =
                 NoteDto(id, title, content, createdAt, updatedAt)
-            override suspend fun update(id: String, title: String, content: String, updatedAt: Long) =
+
+            override suspend fun update(
+                id: String,
+                title: String,
+                content: String,
+                updatedAt: Long
+            ) =
                 NoteDto(id, title, content, 0L, updatedAt)
+
             override suspend fun delete(id: String) {}
         }
         val userCenter = FakeUserCenter(UserState.Authorized)
@@ -178,48 +196,50 @@ class SyncObserverTest {
     }
 
     @Test
-    fun `DB changes during pullAll are not pushed to server`() = runTest(UnconfinedTestDispatcher()) {
-        val notesRepo = FakeNotesRepository()
-        val apiService = FakeNoteApiService()
-        val userCenter = FakeUserCenter(UserState.Authorized)
+    fun `DB changes during pullAll are not pushed to server`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val notesRepo = FakeNotesRepository()
+            val apiService = FakeNoteApiService()
+            val userCenter = FakeUserCenter(UserState.Authorized)
 
-        val observer = SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
-        advanceUntilIdle() // let observeDbAndPush start and consume initial emission
+            val observer = SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+            advanceUntilIdle() // let observeDbAndPush start and consume initial emission
 
-        val deferred = CompletableDeferred<Unit>()
-        apiService.getAllDeferred = deferred
+            val deferred = CompletableDeferred<Unit>()
+            apiService.getAllDeferred = deferred
 
-        backgroundScope.launch { observer.pullAll() }
-        advanceUntilIdle() // pullAll is now suspended at getAll()
+            backgroundScope.launch { observer.pullAll() }
+            advanceUntilIdle() // pullAll is now suspended at getAll()
 
-        // Emit a DB change while isSyncing = true
-        notesRepo.emit(listOf(note("id1")))
-        advanceUntilIdle()
+            // Emit a DB change while isSyncing = true
+            notesRepo.emit(listOf(note("id1")))
+            advanceUntilIdle()
 
-        deferred.complete(Unit) // release pullAll
-        advanceUntilIdle()
+            deferred.complete(Unit) // release pullAll
+            advanceUntilIdle()
 
-        assertTrue(apiService.createCalls.isEmpty(), "Create should not be called during sync")
-        assertTrue(apiService.updateCalls.isEmpty())
-        assertTrue(apiService.deleteCalls.isEmpty())
-    }
+            assertTrue(apiService.createCalls.isEmpty(), "Create should not be called during sync")
+            assertTrue(apiService.updateCalls.isEmpty())
+            assertTrue(apiService.deleteCalls.isEmpty())
+        }
 
     // ─── Observer tests ───────────────────────────────────────────────────────
 
     @Test
-    fun `observer does not push when user is not authorized`() = runTest(UnconfinedTestDispatcher()) {
-        val notesRepo = FakeNotesRepository()
-        val apiService = FakeNoteApiService()
-        val userCenter = FakeUserCenter(UserState.NotAuthorized)
+    fun `observer does not push when user is not authorized`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val notesRepo = FakeNotesRepository()
+            val apiService = FakeNoteApiService()
+            val userCenter = FakeUserCenter(UserState.NotAuthorized)
 
-        SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
-        advanceUntilIdle()
+            SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+            advanceUntilIdle()
 
-        notesRepo.emit(listOf(note("id1")))
-        advanceUntilIdle()
+            notesRepo.emit(listOf(note("id1")))
+            advanceUntilIdle()
 
-        assertTrue(apiService.createCalls.isEmpty())
-    }
+            assertTrue(apiService.createCalls.isEmpty())
+        }
 
     @Test
     fun `observer calls create API when new note added`() = runTest(UnconfinedTestDispatcher()) {
@@ -259,23 +279,24 @@ class SyncObserverTest {
     }
 
     @Test
-    fun `observer calls update API when note updatedAt changes`() = runTest(UnconfinedTestDispatcher()) {
-        val notesRepo = FakeNotesRepository()
-        val apiService = FakeNoteApiService()
-        val userCenter = FakeUserCenter(UserState.Authorized)
+    fun `observer calls update API when note updatedAt changes`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val notesRepo = FakeNotesRepository()
+            val apiService = FakeNoteApiService()
+            val userCenter = FakeUserCenter(UserState.Authorized)
 
-        notesRepo.emit(listOf(note("id1", updatedAt = 100L)))
+            notesRepo.emit(listOf(note("id1", updatedAt = 100L)))
 
-        SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
-        advanceUntilIdle()
+            SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+            advanceUntilIdle()
 
-        notesRepo.emit(listOf(note("id1", updatedAt = 200L)))
-        advanceUntilIdle()
+            notesRepo.emit(listOf(note("id1", updatedAt = 200L)))
+            advanceUntilIdle()
 
-        assertEquals(listOf("id1"), apiService.updateCalls)
-        assertTrue(apiService.createCalls.isEmpty())
-        assertTrue(apiService.deleteCalls.isEmpty())
-    }
+            assertEquals(listOf("id1"), apiService.updateCalls)
+            assertTrue(apiService.createCalls.isEmpty())
+            assertTrue(apiService.deleteCalls.isEmpty())
+        }
 
     @Test
     fun `observer stops pushing after user signs out`() = runTest(UnconfinedTestDispatcher()) {
@@ -297,21 +318,22 @@ class SyncObserverTest {
     }
 
     @Test
-    fun `observer resumes pushing after user signs back in`() = runTest(UnconfinedTestDispatcher()) {
-        val notesRepo = FakeNotesRepository()
-        val apiService = FakeNoteApiService()
-        val userCenter = FakeUserCenter(UserState.NotAuthorized)
+    fun `observer resumes pushing after user signs back in`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val notesRepo = FakeNotesRepository()
+            val apiService = FakeNoteApiService()
+            val userCenter = FakeUserCenter(UserState.NotAuthorized)
 
-        SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
-        advanceUntilIdle()
+            SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+            advanceUntilIdle()
 
-        // Sign in
-        userCenter.authState.value = UserState.Authorized
-        advanceUntilIdle() // initial emission consumed → dropped
+            // Sign in
+            userCenter.authState.value = UserState.Authorized
+            advanceUntilIdle() // initial emission consumed → dropped
 
-        notesRepo.emit(listOf(note("id1")))
-        advanceUntilIdle()
+            notesRepo.emit(listOf(note("id1")))
+            advanceUntilIdle()
 
-        assertEquals(listOf("id1"), apiService.createCalls)
-    }
+            assertEquals(listOf("id1"), apiService.createCalls)
+        }
 }

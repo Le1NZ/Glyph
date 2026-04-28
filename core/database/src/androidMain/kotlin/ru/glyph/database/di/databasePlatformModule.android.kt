@@ -3,7 +3,7 @@ package ru.glyph.database.di
 import android.content.Context
 import androidx.room.Room
 import org.koin.dsl.module
-import ru.glyph.database.api.GlyphDatabase
+import ru.glyph.database.internal.GlyphDatabase
 
 internal actual fun databasePlatformModule() = module {
     single<GlyphDatabase> {

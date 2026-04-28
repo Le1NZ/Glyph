@@ -16,6 +16,7 @@ data class GlyphColorScheme(
     val fabBackground: Color,
     val fabContent: Color,
     val contentOnAccent: Color,
+    val shimmer: Color,
 )
 
 val lightGlyphColorScheme = GlyphColorScheme(
@@ -30,6 +31,7 @@ val lightGlyphColorScheme = GlyphColorScheme(
     fabBackground = Color(0xFF0A0A0A),
     fabContent = Color(0xFFFFFFFF),
     contentOnAccent = Color(0xFFFFFFFF),
+    shimmer = Color(0xFF4D4D4D),
 )
 
 object GlyphFolderColors {

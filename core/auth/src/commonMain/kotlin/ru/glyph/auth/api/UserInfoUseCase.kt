@@ -5,5 +5,5 @@ import ru.glyph.utils.ConvertedResult
 
 interface UserInfoUseCase {
 
-    suspend fun invoke(): ConvertedResult<UserInfo>
+    suspend operator fun invoke(): ConvertedResult<UserInfo>
 }
