@@ -8,8 +8,7 @@ import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
 import kotlinx.coroutines.flow.Flow
 import ru.glyph.navigation.api.model.BaseDestination
-import ru.glyph.navigation.api.model.OverlayDestination
-import ru.glyph.navigation.ui.bottom_sheet.BottomSheetMeta
+import ru.glyph.navigation.api.model.BottomSheetMeta
 import ru.glyph.navigation.ui.bottom_sheet.BottomSheetScene
 import ru.glyph.navigation.ui.dialog.DialogMeta
 import ru.glyph.navigation.ui.dialog.DialogScene

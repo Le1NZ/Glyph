@@ -4,22 +4,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.key
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.OverlayScene
 import kotlinx.coroutines.flow.Flow
-import ru.glyph.navigation.api.bottom_sheet.BaseBottomSheet
 import ru.glyph.navigation.api.model.BaseDestination
-import ru.glyph.navigation.api.model.OverlayDestination
-
-@Immutable
-internal data class BottomSheetMeta(
-    val destination: OverlayDestination,
-    val title: (@Composable () -> String)?,
-    val skipPartiallyExpanded: Boolean,
-)
+import ru.glyph.navigation.api.model.BottomSheetMeta
 
 @OptIn(ExperimentalMaterial3Api::class)
 internal class BottomSheetScene<T : BaseDestination>(
@@ -55,12 +46,4 @@ internal class BottomSheetScene<T : BaseDestination>(
             }
         }
     }
-}
-
-internal fun BaseBottomSheet.toBottomSheetMeta(destination: OverlayDestination): BottomSheetMeta {
-    return BottomSheetMeta(
-        destination = destination,
-        title = title,
-        skipPartiallyExpanded = skipPartiallyExpanded,
-    )
 }

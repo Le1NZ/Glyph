@@ -7,13 +7,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import ru.glyph.auth.api.UserCenter
 import ru.glyph.auth.api.UserInfoUseCase
 import ru.glyph.auth.api.model.UserInfo
 import ru.glyph.navigation.api.Navigator
+import ru.glyph.navigation.api.model.BottomSheet
 import ru.glyph.navigation.api.model.Screen
 import ru.glyph.screen.profile.ui.state.ProfileUiState
 import ru.glyph.screen.profile.ui.state.UserUiModel
+import ru.glyph.string.resources.Res
+import ru.glyph.string.resources.profile_sign_out_confirmation
 import ru.glyph.utils.ConvertedResult
 
 internal class ProfileScreenViewModel(
@@ -32,10 +36,17 @@ internal class ProfileScreenViewModel(
     }
 
     fun onSignOutClick() {
-        viewModelScope.launch {
-            userCenter.signOut()
-            navigator.navigateTo(Screen.Auth, clearBackStack = true)
-        }
+        navigator.showOverlay(
+            overlay = BottomSheet.Confirm(
+                text = { stringResource(Res.string.profile_sign_out_confirmation) },
+                onConfirm = {
+                    viewModelScope.launch {
+                        userCenter.signOut()
+                        navigator.navigateTo(Screen.Auth, clearBackStack = true)
+                    }
+                }
+            ),
+        )
     }
 
     fun onRetryClick() {

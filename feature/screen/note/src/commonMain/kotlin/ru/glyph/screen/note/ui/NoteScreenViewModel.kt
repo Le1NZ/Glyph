@@ -12,9 +12,14 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import ru.glyph.database.api.NotesRepository
 import ru.glyph.navigation.api.Navigator
+import ru.glyph.navigation.api.model.BottomSheet
 import ru.glyph.screen.note.ui.state.NoteUiState
+import ru.glyph.string.resources.Res
+import ru.glyph.string.resources.note_delete_confirmation
+import ru.glyph.string.resources.profile_sign_out_confirmation
 import ru.glyph.utils.flow.collectIn
 import kotlin.time.Duration.Companion.seconds
 
@@ -64,10 +69,17 @@ internal class NoteScreenViewModel(
     }
 
     fun onDeleteClick() {
-        viewModelScope.launch {
-            notesRepository.delete(noteId)
-            navigator.popBackStack()
-        }
+        navigator.showOverlay(
+            overlay = BottomSheet.Confirm(
+                text = { stringResource(Res.string.note_delete_confirmation) },
+                onConfirm = {
+                    viewModelScope.launch {
+                        notesRepository.delete(noteId)
+                        navigator.popBackStack()
+                    }
+                }
+            ),
+        )
     }
 
     fun onBackClick() {

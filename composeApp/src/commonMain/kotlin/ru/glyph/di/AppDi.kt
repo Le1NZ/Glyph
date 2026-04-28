@@ -4,6 +4,7 @@ import org.koin.compose.viewmodel.dsl.viewModel
 import org.koin.dsl.module
 import ru.glyph.AppViewModel
 import ru.glyph.auth.api.di.AuthLocalDi
+import ru.glyph.confirm_bottom_sheet.di.ConfirmBottomSheetLocalDi
 import ru.glyph.database.api.di.DatabaseLocalDi
 import ru.glyph.datastore.api.di.DataStoreLocalDi
 import ru.glyph.home.HomeDi
@@ -34,5 +35,6 @@ internal object AppDi {
         AuthScreenDi.module,
         ProfileScreenDi.module,
         NoteScreenLocalDi.module,
+        ConfirmBottomSheetLocalDi.module,
     )
 }
