@@ -8,6 +8,7 @@ internal data class HomeUiState(
     val folders: List<FolderUiModel> = emptyList(),
     val recentNotes: List<NoteUiModel> = emptyList(),
     val isRefreshing: Boolean = false,
+    val searchQuery: String = "",
 ) {
 
     companion object {

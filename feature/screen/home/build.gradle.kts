@@ -52,6 +52,7 @@ kotlin {
                 implementation(projects.core.sync)
                 implementation(projects.core.utils)
                 implementation(projects.core.stringResources)
+                implementation(libs.navigationevent.compose)
             }
         }
 

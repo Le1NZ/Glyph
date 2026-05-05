@@ -22,6 +22,18 @@ internal class NotesRepositoryImpl(
             .map { notes -> notes.map(NoteEntity::toDomain) }
     }
 
+    override fun search(query: String): Flow<List<Note>> {
+        val currentQuery = query.trim().lowercase()
+        return dao.observeAll().map { notes ->
+            notes.map(NoteEntity::toDomain)
+                .filter { note ->
+                    val title = note.title.lowercase()
+                    val content = note.content.lowercase()
+                    title.contains(currentQuery) || content.contains(currentQuery)
+                }
+        }
+    }
+
     override suspend fun getById(id: String): Note? {
         return dao.getById(id)?.toDomain()
     }

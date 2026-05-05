@@ -7,6 +7,8 @@ interface NotesRepository {
 
     fun observeAll(): Flow<List<Note>>
 
+    fun search(query: String): Flow<List<Note>>
+
     suspend fun getById(id: String): Note?
 
     /**

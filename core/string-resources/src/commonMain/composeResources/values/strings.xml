@@ -5,6 +5,7 @@
 
     <!-- Home screen -->
     <string name="home_search_placeholder">Поиск заметок…</string>
+    <string name="home_search_clear_cd">Очистить поиск</string>
     <string name="home_folders_section">Папки</string>
     <string name="home_recent_section">Недавние</string>
     <string name="home_profile_cd">Профиль</string>
@@ -40,6 +41,8 @@
     <!-- Home empty state -->
     <string name="home_empty_title">Нет заметок</string>
     <string name="home_empty_subtitle">Нажми +, чтобы создать первую заметку</string>
+    <string name="home_search_no_results_title">Ничего не найдено</string>
+    <string name="home_search_no_results_subtitle">Попробуйте изменить запрос</string>
 
     <!-- Relative time -->
     <string name="time_just_now">Только что</string>
