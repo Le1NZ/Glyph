@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import ru.glyph.database.api.NotesRepository
@@ -28,12 +29,20 @@ internal class HomeScreenViewModel(
     private val _isRefreshing = MutableStateFlow(false)
 
     val state = combine(
-        notesRepository.observeAll(),
+        _searchQuery.flatMapLatest { query ->
+            if (query.isBlank()) {
+                notesRepository.observeAll()
+            } else {
+                notesRepository.search(query)
+            }
+        },
         _isRefreshing,
-    ) { notes, isRefreshing ->
+        _searchQuery,
+    ) { notes, isRefreshing, query ->
         HomeUiState(
             recentNotes = notes.map { it.toUiModel() },
             isRefreshing = isRefreshing,
+            searchQuery = query,
         )
     }.stateIn(
         scope = viewModelScope,

@@ -11,9 +11,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -22,11 +25,15 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,6 +45,7 @@ import ru.glyph.design.Res
 import ru.glyph.design.ic_add
 import ru.glyph.design.ic_description
 import ru.glyph.design.ic_person
+import ru.glyph.design.ic_search
 import ru.glyph.design.padding.localPaddingValues
 import ru.glyph.design.theme.GlyphShape
 import ru.glyph.design.theme.GlyphTheme
@@ -45,6 +53,10 @@ import ru.glyph.screen.home.ui.HomeScreenPresenter
 import ru.glyph.screen.home.ui.HomeScreenPresenterImpl
 import ru.glyph.screen.home.ui.HomeScreenPresenterPreview
 import ru.glyph.screen.home.ui.HomeScreenViewModel
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
+import kotlinx.coroutines.flow.filter
 import ru.glyph.screen.home.ui.composable.component.HomeNoteItem
 import ru.glyph.screen.home.ui.composable.component.SearchBar
 import ru.glyph.string.resources.home_create_note_cd
@@ -52,6 +64,8 @@ import ru.glyph.string.resources.home_empty_subtitle
 import ru.glyph.string.resources.home_empty_title
 import ru.glyph.string.resources.home_profile_cd
 import ru.glyph.string.resources.home_recent_section
+import ru.glyph.string.resources.home_search_no_results_subtitle
+import ru.glyph.string.resources.home_search_no_results_title
 import ru.glyph.string.resources.Res as StringRes
 
 @Composable
@@ -70,6 +84,22 @@ internal fun HomeScreenContent(
     modifier: Modifier = Modifier,
 ) {
     val state by presenter.state.collectAsStateWithLifecycle()
+    val density = LocalDensity.current
+    val isImeVisible = WindowInsets.ime.getBottom(density) > 0
+    val focusManager = LocalFocusManager.current
+    val backState = rememberNavigationEventState(NavigationEventInfo.None)
+
+    NavigationBackHandler(
+        state = backState,
+        isBackEnabled = state.searchQuery.isNotBlank(),
+        onBackCompleted = {
+            if (isImeVisible) {
+                focusManager.clearFocus()
+            } else {
+                presenter.onSearchQueryChanged("")
+            }
+        },
+    )
 
     PullToRefreshBox(
         isRefreshing = state.isRefreshing,
@@ -108,10 +138,23 @@ internal fun HomeScreenContent(
 
                 // ── Notes list ──────────────────────────────────────────────────
                 if (state.recentNotes.isEmpty()) {
-                    NotesEmptyState(modifier = Modifier.fillMaxSize())
+                    if (state.searchQuery.isBlank()) {
+                        NotesEmptyState(modifier = Modifier.fillMaxSize())
+                    } else {
+                        SearchNoResultsState(modifier = Modifier.fillMaxSize())
+                    }
                 } else {
+                    val lazyListState = rememberLazyListState()
+
+                    LaunchedEffect(lazyListState, focusManager) {
+                        snapshotFlow { lazyListState.isScrollInProgress }
+                            .filter { it }
+                            .collect { focusManager.clearFocus() }
+                    }
+
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
+                        state = lazyListState,
                         contentPadding = PaddingValues(
                             start = 24.dp,
                             end = 24.dp,
@@ -235,6 +278,36 @@ private fun NotesEmptyState(
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = stringResource(StringRes.string.home_empty_subtitle),
+            style = GlyphTheme.typography.body.copy(color = GlyphTheme.colors.textSecondary),
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun SearchNoResultsState(
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            painter = painterResource(Res.drawable.ic_search),
+            contentDescription = null,
+            tint = GlyphTheme.colors.textSubtle,
+            modifier = Modifier.size(64.dp),
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(StringRes.string.home_search_no_results_title),
+            style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = stringResource(StringRes.string.home_search_no_results_subtitle),
             style = GlyphTheme.typography.body.copy(color = GlyphTheme.colors.textSecondary),
             textAlign = TextAlign.Center,
         )
