@@ -6,20 +6,26 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
+import ru.glyph.database.api.FoldersRepository
 import ru.glyph.database.api.NotesRepository
+import ru.glyph.model.Folder
 import ru.glyph.navigation.api.Navigator
 import ru.glyph.navigation.api.model.BottomSheet
 import ru.glyph.screen.note.ui.state.NoteUiState
 import ru.glyph.string.resources.Res
 import ru.glyph.string.resources.note_delete_confirmation
-import ru.glyph.string.resources.profile_sign_out_confirmation
 import ru.glyph.utils.flow.collectIn
 import kotlin.time.Duration.Companion.seconds
 
@@ -27,15 +33,26 @@ import kotlin.time.Duration.Companion.seconds
 internal class NoteScreenViewModel(
     private val noteId: String,
     private val notesRepository: NotesRepository,
+    private val foldersRepository: FoldersRepository,
     private val navigator: Navigator,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<NoteUiState>(NoteUiState.Loading)
     val uiState = _uiState.asStateFlow()
 
+    private val _currentFolderId = MutableStateFlow<String?>(null)
+
+    val currentFolder: StateFlow<Folder?> = combine(
+        _currentFolderId,
+        foldersRepository.observeAll(),
+    ) { id, folders ->
+        if (id == null) null else folders.firstOrNull { it.id == id }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     init {
         viewModelScope.launch {
             val note = notesRepository.getById(noteId)
+            _currentFolderId.value = note?.folderId
             _uiState.value = NoteUiState.Editing(
                 title = note?.title ?: "",
                 content = note?.content ?: "",
@@ -80,6 +97,24 @@ internal class NoteScreenViewModel(
                 }
             ),
         )
+    }
+
+    fun onMoveClick() {
+        viewModelScope.launch {
+            val folders = foldersRepository.observeAll().first()
+            navigator.showOverlay(
+                overlay = BottomSheet.MoveNoteToFolder(
+                    folders = folders,
+                    currentFolderId = _currentFolderId.value,
+                    onMove = { newFolderId ->
+                        viewModelScope.launch {
+                            notesRepository.setFolder(noteId, newFolderId)
+                            _currentFolderId.value = newFolderId
+                        }
+                    },
+                ),
+            )
+        }
     }
 
     fun onBackClick() {

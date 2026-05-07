@@ -1,18 +1,19 @@
 package ru.glyph.screen.home.ui.composable
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -39,6 +40,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationBackHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
+import kotlinx.coroutines.flow.filter
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import ru.glyph.design.Res
@@ -53,20 +58,18 @@ import ru.glyph.screen.home.ui.HomeScreenPresenter
 import ru.glyph.screen.home.ui.HomeScreenPresenterImpl
 import ru.glyph.screen.home.ui.HomeScreenPresenterPreview
 import ru.glyph.screen.home.ui.HomeScreenViewModel
-import androidx.navigationevent.NavigationEventInfo
-import androidx.navigationevent.compose.NavigationBackHandler
-import androidx.navigationevent.compose.rememberNavigationEventState
-import kotlinx.coroutines.flow.filter
-import ru.glyph.screen.home.ui.composable.component.HomeNoteItem
+import ru.glyph.design.components.FoldersGrid
+import ru.glyph.design.components.NoteCard
 import ru.glyph.screen.home.ui.composable.component.SearchBar
+import ru.glyph.string.resources.Res as StringRes
+import ru.glyph.string.resources.folder_create_action
 import ru.glyph.string.resources.home_create_note_cd
 import ru.glyph.string.resources.home_empty_subtitle
-import ru.glyph.string.resources.home_empty_title
+import ru.glyph.string.resources.home_folders_section
 import ru.glyph.string.resources.home_profile_cd
 import ru.glyph.string.resources.home_recent_section
 import ru.glyph.string.resources.home_search_no_results_subtitle
 import ru.glyph.string.resources.home_search_no_results_title
-import ru.glyph.string.resources.Res as StringRes
 
 @Composable
 internal fun HomeScreen(
@@ -112,75 +115,18 @@ internal fun HomeScreenContent(
                 .background(GlyphTheme.colors.background),
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // ── Header ──────────────────────────────────────────────────────
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(GlyphTheme.colors.surface)
-                        .padding(top = localPaddingValues.calculateTopPadding())
-                        .padding(horizontal = 24.dp)
-                        .padding(bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(24.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        AppLogo()
-                        ProfileButton(onClick = presenter::onProfileClick)
-                    }
-                    SearchBar(
-                        value = presenter.searchQuery.collectAsStateWithLifecycle().value,
-                        onValueChange = presenter::onSearchQueryChanged,
-                    )
-                }
+                HomeHeader(
+                    presenter = presenter,
+                    searchQuery = presenter.searchQuery.collectAsStateWithLifecycle().value,
+                )
 
-                // ── Notes list ──────────────────────────────────────────────────
-                if (state.recentNotes.isEmpty()) {
-                    if (state.searchQuery.isBlank()) {
-                        NotesEmptyState(modifier = Modifier.fillMaxSize())
-                    } else {
-                        SearchNoResultsState(modifier = Modifier.fillMaxSize())
-                    }
-                } else {
-                    val lazyListState = rememberLazyListState()
-
-                    LaunchedEffect(lazyListState, focusManager) {
-                        snapshotFlow { lazyListState.isScrollInProgress }
-                            .filter { it }
-                            .collect { focusManager.clearFocus() }
-                    }
-
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        state = lazyListState,
-                        contentPadding = PaddingValues(
-                            start = 24.dp,
-                            end = 24.dp,
-                            top = 24.dp,
-                            bottom = maxOf(24.dp, localPaddingValues.calculateBottomPadding()) + 72.dp,
-                        ),
-                    ) {
-                        item {
-                            Text(
-                                text = stringResource(StringRes.string.home_recent_section),
-                                style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                        }
-                        items(state.recentNotes, key = { it.id }) { note ->
-                            HomeNoteItem(
-                                note = note,
-                                onClick = { presenter.onNoteClick(note.id) },
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
-                }
+                HomeBody(
+                    state = state,
+                    presenter = presenter,
+                    focusManager = focusManager,
+                )
             }
 
-            // ── FAB ─────────────────────────────────────────────────────────────
             FloatingActionButton(
                 onClick = presenter::onCreateNoteClick,
                 modifier = Modifier
@@ -201,6 +147,149 @@ internal fun HomeScreenContent(
 }
 
 @Composable
+private fun HomeHeader(
+    presenter: HomeScreenPresenter,
+    searchQuery: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(GlyphTheme.colors.surface)
+            .padding(top = localPaddingValues.calculateTopPadding())
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AppLogo()
+            ProfileButton(onClick = presenter::onProfileClick)
+        }
+        SearchBar(
+            value = searchQuery,
+            onValueChange = presenter::onSearchQueryChanged,
+        )
+    }
+}
+
+@Composable
+private fun HomeBody(
+    state: ru.glyph.screen.home.ui.composable.model.HomeUiState,
+    presenter: HomeScreenPresenter,
+    focusManager: androidx.compose.ui.focus.FocusManager,
+    modifier: Modifier = Modifier,
+) {
+    val lazyListState = rememberLazyListState()
+
+    LaunchedEffect(lazyListState, focusManager) {
+        snapshotFlow { lazyListState.isScrollInProgress }
+            .filter { it }
+            .collect { focusManager.clearFocus() }
+    }
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        state = lazyListState,
+        contentPadding = PaddingValues(
+            start = 24.dp,
+            end = 24.dp,
+            top = 24.dp,
+            bottom = maxOf(24.dp, localPaddingValues.calculateBottomPadding()) + 72.dp,
+        ),
+    ) {
+        // ── Folders section ─────────────────────────────────────────────
+        if (state.searchQuery.isBlank()) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(StringRes.string.home_folders_section),
+                        style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
+                    )
+                    CreateFolderButton(onClick = presenter::onCreateFolderClick)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            if (state.folders.isNotEmpty()) {
+                item {
+                    FoldersGrid(
+                        folders = state.folders,
+                        onFolderClick = presenter::onFolderClick,
+                        onFolderActionsClick = presenter::onFolderActionsClick,
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+            } else {
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+            }
+        }
+
+        // ── Notes section ───────────────────────────────────────────────
+        item {
+            Text(
+                text = stringResource(StringRes.string.home_recent_section),
+                style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
+
+        if (state.recentNotes.isEmpty()) {
+            item {
+                if (state.searchQuery.isNotBlank()) {
+                    SearchNoResultsState(modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp))
+                } else {
+                    NotesEmptyHintState(modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp))
+                }
+            }
+        } else {
+            items(state.recentNotes, key = { it.id }) { note ->
+                NoteCard(
+                    note = note,
+                    onClick = { presenter.onNoteClick(note.id) },
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun CreateFolderButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val label = stringResource(StringRes.string.folder_create_action)
+    Row(
+        modifier = modifier
+            .clip(GlyphShape.button)
+            .background(color = GlyphTheme.colors.surfaceVariant)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(
+            painter = painterResource(Res.drawable.ic_add),
+            contentDescription = null,
+            tint = GlyphTheme.colors.textPrimary,
+            modifier = Modifier.size(14.dp),
+        )
+        Text(
+            text = label,
+            style = GlyphTheme.typography.body.copy(color = GlyphTheme.colors.textPrimary),
+        )
+    }
+}
+
+@Composable
 private fun AppLogo(
     modifier: Modifier = Modifier,
 ) {
@@ -209,7 +298,6 @@ private fun AppLogo(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        // TODO: Replace with actual Glyph brand icon asset
         Box(
             modifier = Modifier
                 .size(32.dp)
@@ -255,7 +343,7 @@ private fun ProfileButton(
 }
 
 @Composable
-private fun NotesEmptyState(
+private fun NotesEmptyHintState(
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -267,15 +355,9 @@ private fun NotesEmptyState(
             painter = painterResource(Res.drawable.ic_description),
             contentDescription = null,
             tint = GlyphTheme.colors.textSubtle,
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier.size(48.dp),
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = stringResource(StringRes.string.home_empty_title),
-            style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
-            textAlign = TextAlign.Center,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = stringResource(StringRes.string.home_empty_subtitle),
             style = GlyphTheme.typography.body.copy(color = GlyphTheme.colors.textSecondary),
@@ -297,9 +379,9 @@ private fun SearchNoResultsState(
             painter = painterResource(Res.drawable.ic_search),
             contentDescription = null,
             tint = GlyphTheme.colors.textSubtle,
-            modifier = Modifier.size(64.dp),
+            modifier = Modifier.size(48.dp),
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
         Text(
             text = stringResource(StringRes.string.home_search_no_results_title),
             style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),

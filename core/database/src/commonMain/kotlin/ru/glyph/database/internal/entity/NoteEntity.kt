@@ -8,6 +8,7 @@ internal data class NoteEntity(
     @PrimaryKey val id: String,
     val title: String,
     val content: String,
+    val folderId: String?,
     val createdAt: Long,
     val updatedAt: Long,
 )

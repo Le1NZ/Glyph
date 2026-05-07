@@ -57,7 +57,9 @@ kotlin {
             implementation(projects.feature.screen.auth)
             implementation(projects.feature.screen.profile)
             implementation(projects.feature.screen.note)
+            implementation(projects.feature.screen.folder)
             implementation(projects.feature.confirmBottomSheet)
+            implementation(projects.feature.folderBottomSheets)
             implementation(projects.core.database)
             implementation(projects.core.sync)
         }

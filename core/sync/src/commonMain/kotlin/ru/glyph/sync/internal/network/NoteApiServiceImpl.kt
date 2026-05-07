@@ -27,21 +27,23 @@ internal class NoteApiServiceImpl(
         id: String,
         title: String,
         content: String,
+        folderId: String?,
         createdAt: Long,
         updatedAt: Long,
     ): NoteDto = client.post(baseUrl) {
         contentType(ContentType.Application.Json)
-        setBody(CreateNoteRequest(id, title, content, createdAt, updatedAt))
+        setBody(CreateNoteRequest(id, title, content, folderId, createdAt, updatedAt))
     }.body()
 
     override suspend fun update(
         id: String,
         title: String,
         content: String,
+        folderId: String?,
         updatedAt: Long,
     ): NoteDto = client.put("$baseUrl/$id") {
         contentType(ContentType.Application.Json)
-        setBody(UpdateNoteRequest(title, content, updatedAt))
+        setBody(UpdateNoteRequest(title, content, folderId, updatedAt))
     }.body()
 
     override suspend fun delete(id: String) {
@@ -54,6 +56,7 @@ private data class CreateNoteRequest(
     @SerialName("id") val id: String,
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
+    @SerialName("folder_id") val folderId: String?,
     @SerialName("created_at") val createdAt: Long,
     @SerialName("updated_at") val updatedAt: Long,
 )
@@ -62,5 +65,6 @@ private data class CreateNoteRequest(
 private data class UpdateNoteRequest(
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
+    @SerialName("folder_id") val folderId: String?,
     @SerialName("updated_at") val updatedAt: Long,
 )

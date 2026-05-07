@@ -22,6 +22,17 @@ internal class NotesRepositoryImpl(
             .map { notes -> notes.map(NoteEntity::toDomain) }
     }
 
+    override fun observeByFolder(folderId: String?): Flow<List<Note>> {
+        val source = if (folderId == null) dao.observeWithoutFolder() else dao.observeByFolder(folderId)
+        return source.map { notes -> notes.map(NoteEntity::toDomain) }
+    }
+
+    override fun observeFolderCounts(): Flow<Map<String, Int>> {
+        return dao.observeFolderCounts().map { rows ->
+            rows.associate { it.folderId to it.count }
+        }
+    }
+
     override fun search(query: String): Flow<List<Note>> {
         val currentQuery = query.trim().lowercase()
         return dao.observeAll().map { notes ->
@@ -41,6 +52,7 @@ internal class NotesRepositoryImpl(
     override suspend fun create(
         title: String,
         content: String,
+        folderId: String?,
     ): String {
         val id = Uuid.random().toString()
         val now = currentTimeDuration().inWholeMilliseconds
@@ -49,6 +61,7 @@ internal class NotesRepositoryImpl(
             id = id,
             title = title,
             content = content,
+            folderId = folderId,
             createdAt = now,
             updatedAt = now,
         )
@@ -72,6 +85,16 @@ internal class NotesRepositoryImpl(
         val updated = existing.copy(
             title = title,
             content = content,
+            updatedAt = currentTimeDuration().inWholeMilliseconds,
+        )
+
+        dao.upsert(updated)
+    }
+
+    override suspend fun setFolder(id: String, folderId: String?) {
+        val existing = dao.getById(id) ?: return
+        val updated = existing.copy(
+            folderId = folderId,
             updatedAt = currentTimeDuration().inWholeMilliseconds,
         )
 

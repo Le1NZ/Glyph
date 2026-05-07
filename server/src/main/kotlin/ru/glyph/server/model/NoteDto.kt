@@ -8,6 +8,7 @@ data class NoteDto(
     @SerialName("id") val id: String,
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
+    @SerialName("folder_id") val folderId: String? = null,
     @SerialName("created_at") val createdAt: Long,
     @SerialName("updated_at") val updatedAt: Long,
 )
@@ -17,6 +18,7 @@ data class CreateNoteRequest(
     @SerialName("id") val id: String,
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
+    @SerialName("folder_id") val folderId: String? = null,
     @SerialName("created_at") val createdAt: Long,
     @SerialName("updated_at") val updatedAt: Long,
 )
@@ -25,6 +27,7 @@ data class CreateNoteRequest(
 data class UpdateNoteRequest(
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
+    @SerialName("folder_id") val folderId: String? = null,
     @SerialName("updated_at") val updatedAt: Long,
 )
 

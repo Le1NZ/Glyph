@@ -32,6 +32,7 @@ object NotesRepository {
         Notes.insert {
             it[id] = request.id
             it[userYandexId] = userId
+            it[folderId] = request.folderId
             it[title] = request.title
             it[content] = request.content
             it[createdAt] = request.createdAt
@@ -44,14 +45,23 @@ object NotesRepository {
     }
 
     suspend fun update(id: String, userId: String, request: UpdateNoteRequest): NoteDto? = query {
-        val updated = Notes.update(
+        val existing = Notes.selectAll()
+            .where { (Notes.id eq id) and (Notes.userYandexId eq userId) }
+            .firstOrNull()
+            ?: return@query null
+
+        if (request.updatedAt < existing[Notes.updatedAt]) {
+            return@query existing.toDto()
+        }
+
+        Notes.update(
             where = { (Notes.id eq id) and (Notes.userYandexId eq userId) }
         ) {
             it[title] = request.title
             it[content] = request.content
+            it[folderId] = request.folderId
             it[updatedAt] = request.updatedAt
         }
-        if (updated == 0) return@query null
         Notes.selectAll().where { Notes.id eq id }.firstOrNull()?.toDto()
     }
 
@@ -73,6 +83,7 @@ object NotesRepository {
         id = this[Notes.id],
         title = this[Notes.title],
         content = this[Notes.content],
+        folderId = this[Notes.folderId],
         createdAt = this[Notes.createdAt],
         updatedAt = this[Notes.updatedAt],
     )

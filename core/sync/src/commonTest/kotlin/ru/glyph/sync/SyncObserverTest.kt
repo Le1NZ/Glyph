@@ -1,6 +1,7 @@
 package ru.glyph.sync
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,10 +13,17 @@ import kotlinx.coroutines.test.runTest
 import ru.glyph.auth.api.UserCenter
 import ru.glyph.auth.api.model.SignInResult
 import ru.glyph.auth.api.model.UserState
+import ru.glyph.database.api.FoldersRepository
 import ru.glyph.database.api.NotesRepository
+import ru.glyph.model.Folder
+import ru.glyph.model.FolderColor
 import ru.glyph.model.Note
+import ru.glyph.sync.internal.FolderSyncObserver
+import ru.glyph.sync.internal.SyncGate
 import ru.glyph.sync.internal.SyncObserver
+import ru.glyph.sync.internal.network.FolderApiService
 import ru.glyph.sync.internal.network.NoteApiService
+import ru.glyph.sync.internal.network.dto.FolderDto
 import ru.glyph.sync.internal.network.dto.NoteDto
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,17 +42,21 @@ class SyncObserverTest {
 
         override fun observeAll(): Flow<List<Note>> = _notes.asStateFlow()
 
+        override fun observeByFolder(folderId: String?): Flow<List<Note>> = _notes.asStateFlow()
+
+        override fun observeFolderCounts(): Flow<Map<String, Int>> = MutableStateFlow(emptyMap())
+
+        override fun search(query: String): Flow<List<Note>> = _notes.asStateFlow()
+
         override suspend fun getById(id: String) = _notes.value.find { it.id == id }
 
-        override suspend fun create(title: String, content: String): String {
+        override suspend fun create(title: String, content: String, folderId: String?): String {
             val id = "gen-${_notes.value.size}"
-            _notes.value += Note(id, title, content, 0L, 0L)
+            _notes.value += Note(id, title, content, folderId, 0L, 0L)
             return id
         }
 
-        override suspend fun upsert(
-            note: Note,
-        ) {
+        override suspend fun upsert(note: Note) {
             upsertCalls.add(note)
             val list = _notes.value.toMutableList()
             val idx = list.indexOfFirst { it.id == note.id }
@@ -59,6 +71,13 @@ class SyncObserverTest {
             _notes.value = list
         }
 
+        override suspend fun setFolder(id: String, folderId: String?) {
+            val list = _notes.value.toMutableList()
+            val idx = list.indexOfFirst { it.id == id }
+            if (idx >= 0) list[idx] = list[idx].copy(folderId = folderId)
+            _notes.value = list
+        }
+
         override suspend fun delete(id: String) {
             _notes.value = _notes.value.filter { it.id != id }
         }
@@ -70,6 +89,34 @@ class SyncObserverTest {
 
         fun emit(notes: List<Note>) {
             _notes.value = notes
+        }
+    }
+
+    private class FakeFoldersRepository : FoldersRepository {
+        private val _folders = MutableStateFlow<List<Folder>>(emptyList())
+
+        override fun observeAll(): Flow<List<Folder>> = _folders.asStateFlow()
+        override fun observeByParent(parentFolderId: String?): Flow<List<Folder>> = _folders.asStateFlow()
+        override fun observeSubfolderCounts(): Flow<Map<String, Int>> = MutableStateFlow(emptyMap())
+        override suspend fun getById(id: String) = _folders.value.find { it.id == id }
+        override suspend fun create(name: String, parentFolderId: String?): String {
+            val id = "folder-${_folders.value.size}"
+            _folders.value += Folder(id, name, FolderColor.BLUE, parentFolderId, 0L, 0L)
+            return id
+        }
+        override suspend fun upsert(folder: Folder) {
+            val list = _folders.value.toMutableList()
+            val idx = list.indexOfFirst { it.id == folder.id }
+            if (idx >= 0) list[idx] = folder else list.add(folder)
+            _folders.value = list
+        }
+        override suspend fun rename(id: String, name: String) = Unit
+        override suspend fun setColor(id: String, color: FolderColor) = Unit
+        override suspend fun delete(id: String) {
+            _folders.value = _folders.value.filter { it.id != id }
+        }
+        override suspend fun deleteAll() {
+            _folders.value = emptyList()
         }
     }
 
@@ -89,25 +136,51 @@ class SyncObserverTest {
         }
 
         override suspend fun create(
-            id: String, title: String, content: String, createdAt: Long, updatedAt: Long,
+            id: String,
+            title: String,
+            content: String,
+            folderId: String?,
+            createdAt: Long,
+            updatedAt: Long,
         ): NoteDto {
             createCalls.add(id)
-            return NoteDto(id, title, content, createdAt, updatedAt)
+            return NoteDto(id, title, content, folderId, createdAt, updatedAt)
         }
 
         override suspend fun update(
             id: String,
             title: String,
             content: String,
-            updatedAt: Long
+            folderId: String?,
+            updatedAt: Long,
         ): NoteDto {
             updateCalls.add(id)
-            return NoteDto(id, title, content, 0L, updatedAt)
+            return NoteDto(id, title, content, folderId, 0L, updatedAt)
         }
 
         override suspend fun delete(id: String) {
             deleteCalls.add(id)
         }
+    }
+
+    private class FakeFolderApiService : FolderApiService {
+        override suspend fun getAll(): List<FolderDto> = emptyList()
+        override suspend fun create(
+            id: String,
+            name: String,
+            color: String,
+            parentFolderId: String?,
+            createdAt: Long,
+            updatedAt: Long,
+        ) = FolderDto(id, name, color, parentFolderId, createdAt, updatedAt)
+        override suspend fun update(
+            id: String,
+            name: String,
+            color: String,
+            parentFolderId: String?,
+            updatedAt: Long,
+        ) = FolderDto(id, name, color, parentFolderId, 0L, updatedAt)
+        override suspend fun delete(id: String) = Unit
     }
 
     private class FakeUserCenter(
@@ -123,11 +196,35 @@ class SyncObserverTest {
 
     // ─── Helper ──────────────────────────────────────────────────────────────
 
+    private fun observer(
+        notesRepo: NotesRepository,
+        apiService: NoteApiService,
+        userCenter: UserCenter,
+        scope: CoroutineScope,
+    ): SyncObserver {
+        val gate = SyncGate()
+        val folderSync = FolderSyncObserver(
+            foldersRepository = FakeFoldersRepository(),
+            apiService = FakeFolderApiService(),
+            userCenter = userCenter,
+            syncGate = gate,
+            scope = scope,
+        )
+        return SyncObserver(
+            notesRepository = notesRepo,
+            apiService = apiService,
+            userCenter = userCenter,
+            folderSyncObserver = folderSync,
+            syncGate = gate,
+            scope = scope,
+        )
+    }
+
     private fun note(id: String, updatedAt: Long = 0L) =
-        Note(id, "Title $id", "Content $id", 0L, updatedAt)
+        Note(id, "Title $id", "Content $id", null, 0L, updatedAt)
 
     private fun dto(id: String, updatedAt: Long = 0L) =
-        NoteDto(id, "Title $id", "Content $id", 0L, updatedAt)
+        NoteDto(id, "Title $id", "Content $id", null, 0L, updatedAt)
 
     // ─── pullAll tests ────────────────────────────────────────────────────────
 
@@ -137,7 +234,7 @@ class SyncObserverTest {
         val apiService = FakeNoteApiService()
         val userCenter = FakeUserCenter(UserState.NotAuthorized)
 
-        val observer = SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+        val observer = observer(notesRepo, apiService, userCenter, backgroundScope)
         observer.pullAll()
 
         assertEquals(0, apiService.getAllCallCount)
@@ -152,7 +249,7 @@ class SyncObserverTest {
         }
         val userCenter = FakeUserCenter(UserState.Authorized)
 
-        val observer = SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+        val observer = observer(notesRepo, apiService, userCenter, backgroundScope)
         observer.pullAll()
         advanceUntilIdle()
 
@@ -171,24 +268,24 @@ class SyncObserverTest {
                 id: String,
                 title: String,
                 content: String,
+                folderId: String?,
                 createdAt: Long,
-                updatedAt: Long
-            ) =
-                NoteDto(id, title, content, createdAt, updatedAt)
+                updatedAt: Long,
+            ) = NoteDto(id, title, content, folderId, createdAt, updatedAt)
 
             override suspend fun update(
                 id: String,
                 title: String,
                 content: String,
-                updatedAt: Long
-            ) =
-                NoteDto(id, title, content, 0L, updatedAt)
+                folderId: String?,
+                updatedAt: Long,
+            ) = NoteDto(id, title, content, folderId, 0L, updatedAt)
 
             override suspend fun delete(id: String) {}
         }
         val userCenter = FakeUserCenter(UserState.Authorized)
 
-        val observer = SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+        val observer = observer(notesRepo, apiService, userCenter, backgroundScope)
         val result = observer.pullAll()
 
         assertTrue(result.isFailure)
@@ -202,7 +299,7 @@ class SyncObserverTest {
             val apiService = FakeNoteApiService()
             val userCenter = FakeUserCenter(UserState.Authorized)
 
-            val observer = SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+            val observer = observer(notesRepo, apiService, userCenter, backgroundScope)
             advanceUntilIdle() // let observeDbAndPush start and consume initial emission
 
             val deferred = CompletableDeferred<Unit>()
@@ -232,7 +329,7 @@ class SyncObserverTest {
             val apiService = FakeNoteApiService()
             val userCenter = FakeUserCenter(UserState.NotAuthorized)
 
-            SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+            observer(notesRepo, apiService, userCenter, backgroundScope)
             advanceUntilIdle()
 
             notesRepo.emit(listOf(note("id1")))
@@ -247,7 +344,7 @@ class SyncObserverTest {
         val apiService = FakeNoteApiService()
         val userCenter = FakeUserCenter(UserState.Authorized)
 
-        SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+        observer(notesRepo, apiService, userCenter, backgroundScope)
         advanceUntilIdle() // consume initial emission → drop(1)
 
         notesRepo.emit(listOf(note("id1")))
@@ -267,7 +364,7 @@ class SyncObserverTest {
         // Pre-populate so the first emission (which gets dropped) includes the note
         notesRepo.emit(listOf(note("id1")))
 
-        SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+        observer(notesRepo, apiService, userCenter, backgroundScope)
         advanceUntilIdle() // consumes [note1] as initial, drops it
 
         // Remove the note
@@ -287,7 +384,7 @@ class SyncObserverTest {
 
             notesRepo.emit(listOf(note("id1", updatedAt = 100L)))
 
-            SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+            observer(notesRepo, apiService, userCenter, backgroundScope)
             advanceUntilIdle()
 
             notesRepo.emit(listOf(note("id1", updatedAt = 200L)))
@@ -304,7 +401,7 @@ class SyncObserverTest {
         val apiService = FakeNoteApiService()
         val userCenter = FakeUserCenter(UserState.Authorized)
 
-        SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+        observer(notesRepo, apiService, userCenter, backgroundScope)
         advanceUntilIdle()
 
         // Sign out
@@ -324,7 +421,7 @@ class SyncObserverTest {
             val apiService = FakeNoteApiService()
             val userCenter = FakeUserCenter(UserState.NotAuthorized)
 
-            SyncObserver(notesRepo, apiService, userCenter, backgroundScope)
+            observer(notesRepo, apiService, userCenter, backgroundScope)
             advanceUntilIdle()
 
             // Sign in

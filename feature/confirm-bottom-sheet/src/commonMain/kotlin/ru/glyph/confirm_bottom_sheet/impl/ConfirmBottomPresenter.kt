@@ -25,8 +25,8 @@ internal class ConfirmBottomPresenterImpl(
     private val navigator by navigatorLazy
 
     override fun onConfirm() {
-        onConfirmAccepted()
         navigator.hideOverlay()
+        onConfirmAccepted()
     }
 
     override fun onCancel() {

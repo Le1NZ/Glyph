@@ -5,7 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -24,12 +24,12 @@ internal class SyncObserver(
     private val notesRepository: NotesRepository,
     private val apiService: NoteApiService,
     private val userCenter: UserCenter,
+    private val folderSyncObserver: FolderSyncObserver,
+    private val syncGate: SyncGate,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) : SyncBootstrap {
 
     private var pullAsyncJob: Job? = null
-
-    private val isSyncing = MutableStateFlow(false)
 
     init {
         userCenter.authState.collectLatestIn(
@@ -50,8 +50,11 @@ internal class SyncObserver(
     override suspend fun pullAll(): Result<Unit> = runCatching {
         if (userCenter.authState.value != UserState.Authorized) return@runCatching
 
-        isSyncing.value = true
+        syncGate.isSyncing.value = true
         try {
+            // Folders first so freshly-pulled notes' folderId resolves locally.
+            folderSyncObserver.pullAll()
+
             val remoteNotes = apiService.getAll()
             notesRepository.deleteAll()
             remoteNotes.forEach { dto ->
@@ -60,23 +63,25 @@ internal class SyncObserver(
                         id = dto.id,
                         title = dto.title,
                         content = dto.content,
+                        folderId = dto.folderId,
                         createdAt = dto.createdAt,
                         updatedAt = dto.updatedAt,
                     )
                 )
             }
         } finally {
-            isSyncing.value = false
+            syncGate.isSyncing.value = false
         }
     }
 
     private suspend fun observeDbAndPush() {
-        isSyncing.flatMapLatest { syncing ->
+        syncGate.isSyncing.flatMapLatest { syncing ->
             if (syncing) {
                 emptyFlow()
             } else {
                 notesRepository
                     .observeAll()
+                    .distinctUntilChanged()
                     .windowedWithPrevious(emptyList())
                     .drop(1)
             }
@@ -97,19 +102,11 @@ internal class SyncObserver(
                     id = note.id,
                     title = note.title,
                     content = note.content,
+                    folderId = note.folderId,
                     createdAt = note.createdAt,
                     updatedAt = note.updatedAt,
                 )
-
-                notesRepository.upsert(
-                    note = Note(
-                        id = serverNote.id,
-                        title = serverNote.title,
-                        content = serverNote.content,
-                        createdAt = serverNote.createdAt,
-                        updatedAt = serverNote.updatedAt,
-                    )
-                )
+                applyServerResponse(pushed = note, serverNote = serverNote)
             }
         }
 
@@ -122,19 +119,31 @@ internal class SyncObserver(
                     id = note.id,
                     title = note.title,
                     content = note.content,
+                    folderId = note.folderId,
                     updatedAt = note.updatedAt,
                 )
-
-                notesRepository.upsert(
-                    note = Note(
-                        id = serverNote.id,
-                        title = serverNote.title,
-                        content = serverNote.content,
-                        createdAt = serverNote.createdAt,
-                        updatedAt = serverNote.updatedAt,
-                    ),
-                )
+                applyServerResponse(pushed = note, serverNote = serverNote)
             }
+        }
+    }
+
+    private suspend fun applyServerResponse(
+        pushed: Note,
+        serverNote: ru.glyph.sync.internal.network.dto.NoteDto
+    ) {
+        val incoming = Note(
+            id = serverNote.id,
+            title = serverNote.title,
+            content = serverNote.content,
+            folderId = serverNote.folderId,
+            createdAt = serverNote.createdAt,
+            updatedAt = serverNote.updatedAt,
+        )
+        val currentLocal = notesRepository.getById(pushed.id) ?: return
+        val localUntouchedSinceWeSent = currentLocal.updatedAt == pushed.updatedAt
+        val serverDiffersFromLocal = currentLocal != incoming
+        if (localUntouchedSinceWeSent && serverDiffersFromLocal) {
+            notesRepository.upsert(incoming)
         }
     }
 }
