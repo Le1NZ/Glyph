@@ -14,6 +14,9 @@ internal interface HomeScreenPresenter {
     fun onCreateNoteClick()
     fun onSearchQueryChanged(query: String)
     fun onRefresh()
+    fun onFolderClick(id: String)
+    fun onCreateFolderClick()
+    fun onFolderActionsClick(id: String)
 }
 
 internal class HomeScreenPresenterImpl(
@@ -28,6 +31,9 @@ internal class HomeScreenPresenterImpl(
     override fun onCreateNoteClick() = viewModel.onCreateNoteClick()
     override fun onSearchQueryChanged(query: String) = viewModel.onSearchQueryChanged(query)
     override fun onRefresh() = viewModel.onRefresh()
+    override fun onFolderClick(id: String) = viewModel.onFolderClick(id)
+    override fun onCreateFolderClick() = viewModel.onCreateFolderClick()
+    override fun onFolderActionsClick(id: String) = viewModel.onFolderActionsClick(id)
 }
 
 internal class HomeScreenPresenterPreview : HomeScreenPresenter {
@@ -40,4 +46,7 @@ internal class HomeScreenPresenterPreview : HomeScreenPresenter {
     override fun onCreateNoteClick() = Unit
     override fun onSearchQueryChanged(query: String) = Unit
     override fun onRefresh() = Unit
+    override fun onFolderClick(id: String) = Unit
+    override fun onCreateFolderClick() = Unit
+    override fun onFolderActionsClick(id: String) = Unit
 }

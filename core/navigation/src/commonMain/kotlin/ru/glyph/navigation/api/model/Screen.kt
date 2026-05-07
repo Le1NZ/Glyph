@@ -16,4 +16,7 @@ sealed class Screen : BaseDestination() {
 
     @Serializable
     data class Note(val noteId: String) : Screen()
+
+    @Serializable
+    data class Folder(val folderId: String) : Screen()
 }

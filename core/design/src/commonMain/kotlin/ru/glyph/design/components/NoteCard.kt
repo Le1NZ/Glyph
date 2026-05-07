@@ -1,4 +1,4 @@
-package ru.glyph.screen.home.ui.composable.component
+package ru.glyph.design.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -29,7 +31,6 @@ import ru.glyph.design.ic_description
 import ru.glyph.design.theme.GlyphElevation
 import ru.glyph.design.theme.GlyphShape
 import ru.glyph.design.theme.GlyphTheme
-import ru.glyph.screen.home.ui.composable.model.NoteUiModel
 import ru.glyph.string.resources.note_untitled
 import ru.glyph.string.resources.time_days_ago
 import ru.glyph.string.resources.time_hours_ago
@@ -40,9 +41,17 @@ import ru.glyph.utils.clock.currentTimeDuration
 import kotlin.time.Duration.Companion.seconds
 import ru.glyph.string.resources.Res as StringRes
 
+@Immutable
+data class NoteCardUiModel(
+    val id: String,
+    val title: String,
+    val updatedAt: Long,
+    val tags: List<String> = emptyList(),
+)
+
 @Composable
-internal fun HomeNoteItem(
-    note: NoteUiModel,
+fun NoteCard(
+    note: NoteCardUiModel,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -55,7 +64,8 @@ internal fun HomeNoteItem(
                 spotColor = GlyphTheme.colors.shadow,
                 ambientColor = GlyphTheme.colors.shadow,
             )
-            .background(color = GlyphTheme.colors.surface, shape = GlyphShape.card)
+            .clip(GlyphShape.card)
+            .background(color = GlyphTheme.colors.surface)
             .clickable(onClick = onClick)
             .padding(16.dp),
         verticalAlignment = Alignment.Top,
@@ -91,12 +101,27 @@ internal fun HomeNoteItem(
             )
             if (note.tags.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    note.tags.forEach { tag ->
-                        HomeNoteTag(tag = tag)
-                    }
+                    note.tags.forEach { tag -> NoteCardTag(tag = tag) }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun NoteCardTag(
+    tag: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .background(color = GlyphTheme.colors.surfaceVariant, shape = GlyphShape.tag)
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    ) {
+        Text(
+            text = tag,
+            style = GlyphTheme.typography.caption.copy(color = GlyphTheme.colors.textSubtle),
+        )
     }
 }
 

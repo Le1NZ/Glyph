@@ -11,7 +11,6 @@ import androidx.navigation3.ui.NavDisplay
 import org.koin.compose.navigation3.koinEntryProvider
 import org.koin.core.annotation.KoinExperimentalAPI
 import ru.glyph.design.padding.LocalPaddingValuesProvider
-import ru.glyph.navigation.api.model.BaseDestination
 import ru.glyph.navigation.ui.NavigatorScreenPresenter
 import ru.glyph.navigation.ui.logic.rememberNavigationController
 import ru.glyph.navigation.ui.rememberSceneStrategy

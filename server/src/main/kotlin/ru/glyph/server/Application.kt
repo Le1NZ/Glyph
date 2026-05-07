@@ -13,6 +13,7 @@ import io.ktor.server.routing.routing
 import kotlinx.serialization.json.Json
 import ru.glyph.server.auth.configureAuth
 import ru.glyph.server.database.configureDatabase
+import ru.glyph.server.routes.foldersRoutes
 import ru.glyph.server.routes.notesRoutes
 import ru.glyph.server.routes.profileRoutes
 
@@ -40,6 +41,7 @@ fun Application.module() {
 
     routing {
         notesRoutes()
+        foldersRoutes()
         profileRoutes()
     }
 }

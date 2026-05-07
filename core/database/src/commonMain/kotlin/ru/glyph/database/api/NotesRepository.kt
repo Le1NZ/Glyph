@@ -7,6 +7,13 @@ interface NotesRepository {
 
     fun observeAll(): Flow<List<Note>>
 
+    fun observeByFolder(folderId: String?): Flow<List<Note>>
+
+    /**
+     * Map of folderId -> count of notes inside it. Notes with folderId=null are excluded.
+     */
+    fun observeFolderCounts(): Flow<Map<String, Int>>
+
     fun search(query: String): Flow<List<Note>>
 
     suspend fun getById(id: String): Note?
@@ -17,6 +24,7 @@ interface NotesRepository {
     suspend fun create(
         title: String = "",
         content: String = "",
+        folderId: String? = null,
     ): String
 
     suspend fun upsert(
@@ -28,6 +36,8 @@ interface NotesRepository {
         title: String,
         content: String,
     )
+
+    suspend fun setFolder(id: String, folderId: String?)
 
     suspend fun delete(id: String)
     suspend fun deleteAll()

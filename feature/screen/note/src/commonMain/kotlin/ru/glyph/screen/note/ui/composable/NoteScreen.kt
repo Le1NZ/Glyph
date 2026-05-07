@@ -1,10 +1,13 @@
 package ru.glyph.screen.note.ui.composable
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -41,6 +45,7 @@ import ru.glyph.design.components.LoadingScreen
 import ru.glyph.design.ic_arrow_back
 import ru.glyph.design.ic_delete
 import ru.glyph.design.ic_edit
+import ru.glyph.design.ic_folder
 import ru.glyph.design.ic_format_bold
 import ru.glyph.design.ic_format_code
 import ru.glyph.design.ic_format_heading
@@ -48,7 +53,10 @@ import ru.glyph.design.ic_format_italic
 import ru.glyph.design.ic_format_list
 import ru.glyph.design.ic_visibility
 import ru.glyph.design.padding.localPaddingValues
+import ru.glyph.design.theme.GlyphShape
 import ru.glyph.design.theme.GlyphTheme
+import ru.glyph.design.theme.toGlyphColor
+import ru.glyph.model.Folder
 import ru.glyph.screen.note.ui.NoteScreenViewModel
 import ru.glyph.screen.note.ui.state.NoteUiState
 import ru.glyph.string.resources.md_bold_cd
@@ -56,9 +64,11 @@ import ru.glyph.string.resources.md_code_cd
 import ru.glyph.string.resources.md_heading_cd
 import ru.glyph.string.resources.md_italic_cd
 import ru.glyph.string.resources.md_list_cd
+import ru.glyph.string.resources.move_note_no_folder
 import ru.glyph.string.resources.note_back_cd
 import ru.glyph.string.resources.note_delete_cd
 import ru.glyph.string.resources.note_edit_cd
+import ru.glyph.string.resources.note_folder_chip_cd
 import ru.glyph.string.resources.note_placeholder
 import ru.glyph.string.resources.note_preview_cd
 import ru.glyph.string.resources.note_title_placeholder
@@ -69,15 +79,18 @@ internal fun NoteScreen(
     viewModel: NoteScreenViewModel,
     modifier: Modifier = Modifier,
 ) {
+    val currentFolder by viewModel.currentFolder.collectAsStateWithLifecycle()
     when (val state = viewModel.uiState.collectAsStateWithLifecycle().value) {
         is NoteUiState.Loading -> LoadingScreen()
 
         is NoteUiState.Editing -> NoteScreenContent(
             state = state,
+            currentFolder = currentFolder,
             onTitleChange = viewModel::onTitleChange,
             onContentChange = viewModel::onContentChange,
             onTogglePreview = viewModel::onTogglePreview,
             onDeleteClick = viewModel::onDeleteClick,
+            onMoveClick = viewModel::onMoveClick,
             onBackClick = viewModel::onBackClick,
             modifier = modifier,
         )
@@ -87,10 +100,12 @@ internal fun NoteScreen(
 @Composable
 internal fun NoteScreenContent(
     state: NoteUiState.Editing,
+    currentFolder: Folder?,
     onTitleChange: (String) -> Unit,
     onContentChange: (String) -> Unit,
     onTogglePreview: () -> Unit,
     onDeleteClick: () -> Unit,
+    onMoveClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -114,6 +129,15 @@ internal fun NoteScreenContent(
             onBackClick = onBackClick,
             onTogglePreview = onTogglePreview,
             onDeleteClick = onDeleteClick,
+        )
+
+        FolderChip(
+            folder = currentFolder,
+            onClick = onMoveClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(GlyphTheme.colors.surface)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
         )
 
         when (state) {
@@ -280,7 +304,7 @@ private fun NoteEditor(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(horizontal = 20.dp, vertical = 16.dp),
-                textStyle = GlyphTheme.typography.body.copy(
+                textStyle = GlyphTheme.typography.heading3.copy(
                     color = GlyphTheme.colors.textPrimary,
                 ),
                 cursorBrush = SolidColor(GlyphTheme.colors.accent),
@@ -288,7 +312,7 @@ private fun NoteEditor(
                     if (contentTFV.text.isEmpty()) {
                         Text(
                             text = contentPlaceholder,
-                            style = GlyphTheme.typography.body.copy(
+                            style = GlyphTheme.typography.heading3.copy(
                                 color = GlyphTheme.colors.textSecondary,
                             ),
                         )
@@ -377,14 +401,51 @@ private fun NotePreview(
                 codeBackground = GlyphTheme.colors.surfaceVariant,
                 inlineCodeBackground = GlyphTheme.colors.surfaceVariant,
             ),
-            typography = markdownTypography(
-                text = GlyphTheme.typography.body,
-                h1 = GlyphTheme.typography.heading1,
-                h2 = GlyphTheme.typography.heading2,
-                h3 = GlyphTheme.typography.heading3,
-                paragraph = GlyphTheme.typography.body,
-            ),
         )
+    }
+}
+
+@Composable
+private fun FolderChip(
+    folder: Folder?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val label = folder?.name ?: stringResource(StringRes.string.move_note_no_folder)
+    val iconColor = folder?.color?.toGlyphColor() ?: GlyphTheme.colors.textSubtle
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            modifier = Modifier
+                .clip(GlyphShape.button)
+                .background(color = GlyphTheme.colors.surfaceVariant)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(16.dp)
+                    .background(color = iconColor, shape = GlyphShape.iconContainer),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_folder),
+                    contentDescription = stringResource(StringRes.string.note_folder_chip_cd),
+                    tint = GlyphTheme.colors.contentOnAccent,
+                    modifier = Modifier.size(10.dp),
+                )
+            }
+            Text(
+                text = label,
+                style = GlyphTheme.typography.body.copy(color = GlyphTheme.colors.textPrimary),
+            )
+        }
+        Spacer(modifier = Modifier.size(8.dp))
     }
 }
 

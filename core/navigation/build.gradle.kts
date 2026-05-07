@@ -55,6 +55,7 @@ kotlin {
                 implementation(libs.viewmodelNavigation3)
                 implementation(libs.coroutines)
 
+                api(projects.core.model)
                 implementation(projects.core.design)
                 implementation(projects.core.utils)
             }

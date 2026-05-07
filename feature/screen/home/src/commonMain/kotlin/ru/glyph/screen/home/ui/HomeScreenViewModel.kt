@@ -9,17 +9,26 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import ru.glyph.database.api.FoldersRepository
 import ru.glyph.database.api.NotesRepository
+import ru.glyph.design.components.FolderCardUiModel
+import ru.glyph.design.components.NoteCardUiModel
+import ru.glyph.design.theme.toGlyphColor
+import ru.glyph.model.Folder
 import ru.glyph.model.Note
 import ru.glyph.navigation.api.Navigator
+import ru.glyph.navigation.api.model.BottomSheet
 import ru.glyph.navigation.api.model.Screen
 import ru.glyph.screen.home.ui.composable.model.HomeUiState
-import ru.glyph.screen.home.ui.composable.model.NoteUiModel
+import ru.glyph.string.resources.Res as StringRes
+import ru.glyph.string.resources.folder_delete_confirmation
 import ru.glyph.sync.api.SyncBootstrap
 
 internal class HomeScreenViewModel(
     private val navigator: Navigator,
     private val notesRepository: NotesRepository,
+    private val foldersRepository: FoldersRepository,
     private val syncBootstrap: SyncBootstrap,
 ) : ViewModel() {
 
@@ -28,18 +37,20 @@ internal class HomeScreenViewModel(
 
     private val _isRefreshing = MutableStateFlow(false)
 
+    private val notesFlow = _searchQuery.flatMapLatest { query ->
+        if (query.isNotBlank()) notesRepository.search(query)
+        else notesRepository.observeAll()
+    }
+
     val state = combine(
-        _searchQuery.flatMapLatest { query ->
-            if (query.isBlank()) {
-                notesRepository.observeAll()
-            } else {
-                notesRepository.search(query)
-            }
-        },
+        notesFlow,
+        foldersRepository.observeByParent(null),
+        notesRepository.observeFolderCounts(),
         _isRefreshing,
         _searchQuery,
-    ) { notes, isRefreshing, query ->
+    ) { notes, rootFolders, counts, isRefreshing, query ->
         HomeUiState(
+            folders = rootFolders.map { it.toUiModel(noteCount = counts[it.id] ?: 0) },
             recentNotes = notes.map { it.toUiModel() },
             isRefreshing = isRefreshing,
             searchQuery = query,
@@ -77,10 +88,67 @@ internal class HomeScreenViewModel(
         }
     }
 
-    private fun Note.toUiModel() = NoteUiModel(
+    fun onFolderClick(id: String) {
+        navigator.navigateTo(Screen.Folder(id))
+    }
+
+    fun onCreateFolderClick() {
+        navigator.showOverlay(
+            overlay = BottomSheet.FolderForm(
+                mode = BottomSheet.FolderForm.Mode.Create,
+                onSave = { name ->
+                    viewModelScope.launch { foldersRepository.create(name = name) }
+                },
+            ),
+        )
+    }
+
+    fun onFolderActionsClick(id: String) {
+        viewModelScope.launch {
+            val folder = foldersRepository.getById(id) ?: return@launch
+            navigator.showOverlay(
+                overlay = BottomSheet.FolderActions(
+                    folder = folder,
+                    onRename = { showRenameSheet(folder) },
+                    onDelete = { showDeleteConfirmation(folder) },
+                ),
+            )
+        }
+    }
+
+    private fun showRenameSheet(folder: Folder) {
+        navigator.showOverlay(
+            overlay = BottomSheet.FolderForm(
+                mode = BottomSheet.FolderForm.Mode.Rename,
+                initialName = folder.name,
+                onSave = { name ->
+                    viewModelScope.launch { foldersRepository.rename(folder.id, name) }
+                },
+            ),
+        )
+    }
+
+    private fun showDeleteConfirmation(folder: Folder) {
+        navigator.showOverlay(
+            overlay = BottomSheet.Confirm(
+                text = { stringResource(StringRes.string.folder_delete_confirmation) },
+                onConfirm = {
+                    viewModelScope.launch { foldersRepository.delete(folder.id) }
+                },
+            ),
+        )
+    }
+
+    private fun Note.toUiModel() = NoteCardUiModel(
         id = id,
         title = title,
         updatedAt = updatedAt,
-        tags = emptyList(),
+    )
+
+    private fun Folder.toUiModel(noteCount: Int) = FolderCardUiModel(
+        id = id,
+        name = name,
+        noteCount = noteCount,
+        color = color.toGlyphColor(),
     )
 }

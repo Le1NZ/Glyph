@@ -52,7 +52,9 @@ kotlin {
                 implementation(libs.coilCompose)
                 implementation(libs.coilNetwork)
 
+                api(projects.core.model)
                 implementation(projects.core.stringResources)
+                implementation(projects.core.utils)
             }
         }
 

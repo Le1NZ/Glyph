@@ -62,4 +62,20 @@
     <string name="confirm_bottom_sheet_primary_action">Продолжить</string>
     <string name="confirm_bottom_sheet_secondary_action">Отмена</string>
 
+    <!-- Folder bottom sheets -->
+    <string name="folder_form_create_title">Новая папка</string>
+    <string name="folder_form_rename_title">Переименовать папку</string>
+    <string name="folder_form_name_placeholder">Название</string>
+    <string name="folder_form_save">Сохранить</string>
+    <string name="folder_actions_rename">Переименовать</string>
+    <string name="folder_actions_delete">Удалить</string>
+    <string name="folder_delete_confirmation">Удалить папку? Заметки внутри сохранятся.</string>
+    <string name="folder_create_action">Создать папку</string>
+    <string name="folder_filter_clear_cd">Сбросить фильтр</string>
+    <string name="folder_actions_cd">Действия с папкой</string>
+    <string name="move_note_title">Переместить в папку</string>
+    <string name="move_note_no_folder">Без папки</string>
+    <string name="note_folder_chip_cd">Изменить папку</string>
+    <string name="folder_all_notes_section">Все заметки</string>
+
 </resources>
