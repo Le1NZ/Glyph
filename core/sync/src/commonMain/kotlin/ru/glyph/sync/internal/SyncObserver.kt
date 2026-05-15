@@ -25,6 +25,7 @@ internal class SyncObserver(
     private val apiService: NoteApiService,
     private val userCenter: UserCenter,
     private val folderSyncObserver: FolderSyncObserver,
+    private val tagSyncObserver: TagSyncObserver,
     private val syncGate: SyncGate,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) : SyncBootstrap {
@@ -54,6 +55,7 @@ internal class SyncObserver(
         try {
             // Folders first so freshly-pulled notes' folderId resolves locally.
             folderSyncObserver.pullAll()
+            tagSyncObserver.pullAll()
 
             val remoteNotes = apiService.getAll()
             notesRepository.deleteAll()
@@ -64,6 +66,7 @@ internal class SyncObserver(
                         title = dto.title,
                         content = dto.content,
                         folderId = dto.folderId,
+                        tagIds = dto.tagIds,
                         createdAt = dto.createdAt,
                         updatedAt = dto.updatedAt,
                     )
@@ -103,6 +106,7 @@ internal class SyncObserver(
                     title = note.title,
                     content = note.content,
                     folderId = note.folderId,
+                    tagIds = note.tagIds,
                     createdAt = note.createdAt,
                     updatedAt = note.updatedAt,
                 )
@@ -120,6 +124,7 @@ internal class SyncObserver(
                     title = note.title,
                     content = note.content,
                     folderId = note.folderId,
+                    tagIds = note.tagIds,
                     updatedAt = note.updatedAt,
                 )
                 applyServerResponse(pushed = note, serverNote = serverNote)
@@ -136,6 +141,7 @@ internal class SyncObserver(
             title = serverNote.title,
             content = serverNote.content,
             folderId = serverNote.folderId,
+            tagIds = serverNote.tagIds,
             createdAt = serverNote.createdAt,
             updatedAt = serverNote.updatedAt,
         )

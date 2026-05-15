@@ -16,6 +16,7 @@ import ru.glyph.server.database.configureDatabase
 import ru.glyph.server.routes.foldersRoutes
 import ru.glyph.server.routes.notesRoutes
 import ru.glyph.server.routes.profileRoutes
+import ru.glyph.server.routes.tagsRoutes
 
 fun main() {
     embeddedServer(Netty, port = 8080, module = Application::module).start(wait = true)
@@ -42,6 +43,7 @@ fun Application.module() {
     routing {
         notesRoutes()
         foldersRoutes()
+        tagsRoutes()
         profileRoutes()
     }
 }

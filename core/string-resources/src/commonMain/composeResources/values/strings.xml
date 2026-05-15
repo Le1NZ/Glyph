@@ -78,4 +78,14 @@
     <string name="note_folder_chip_cd">Изменить папку</string>
     <string name="folder_all_notes_section">Все заметки</string>
 
+    <string name="tag_selection_title">Теги</string>
+    <string name="tag_selection_save">Сохранить</string>
+    <string name="tag_selection_create_new">Создать новый тег</string>
+    <string name="tag_selection_delete_cd">Удалить тег</string>
+    <string name="tag_form_create_title">Создать тег</string>
+    <string name="tag_form_edit_title">Изменить тег</string>
+    <string name="tag_form_name_placeholder">Название тега</string>
+    <string name="tag_form_save">Сохранить</string>
+    <string name="tag_form_color">Цвет</string>
+    <string name="note_add_tags">Добавить теги</string>
 </resources>

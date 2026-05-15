@@ -3,6 +3,7 @@ package ru.glyph.navigation.api.model
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import ru.glyph.model.Folder
+import ru.glyph.model.FolderColor
 import ru.glyph.navigation.ui.SceneStrategyImpl
 
 sealed class BottomSheet : OverlayDestination() {
@@ -31,6 +32,21 @@ sealed class BottomSheet : OverlayDestination() {
         val currentFolderId: String?,
         val onMove: (folderId: String?) -> Unit,
     ) : BottomSheet()
+
+    data class TagSelection(
+        val noteId: String,
+        val selectedTagIds: List<String>,
+        val onSave: (tagIds: List<String>) -> Unit,
+    ) : BottomSheet()
+
+    data class TagForm(
+        val mode: Mode,
+        val initialName: String = "",
+        val initialColor: FolderColor = FolderColor.BLUE,
+        val onSave: (name: String, color: FolderColor) -> Unit,
+    ) : BottomSheet() {
+        enum class Mode { Create, Edit }
+    }
 }
 
 @Immutable

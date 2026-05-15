@@ -1,6 +1,7 @@
 package ru.glyph.screen.home.ui.composable
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,6 +34,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
@@ -61,6 +64,7 @@ import ru.glyph.screen.home.ui.HomeScreenViewModel
 import ru.glyph.design.components.FoldersGrid
 import ru.glyph.design.components.NoteCard
 import ru.glyph.screen.home.ui.composable.component.SearchBar
+import ru.glyph.screen.home.ui.composable.model.HomeUiState
 import ru.glyph.string.resources.Res as StringRes
 import ru.glyph.string.resources.folder_create_action
 import ru.glyph.string.resources.home_create_note_cd
@@ -70,6 +74,13 @@ import ru.glyph.string.resources.home_profile_cd
 import ru.glyph.string.resources.home_recent_section
 import ru.glyph.string.resources.home_search_no_results_subtitle
 import ru.glyph.string.resources.home_search_no_results_title
+import ru.glyph.string.resources.tag_selection_create_new
+
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.lazy.LazyRow
+import ru.glyph.design.theme.toGlyphColor
+import ru.glyph.model.Tag
 
 @Composable
 internal fun HomeScreen(
@@ -117,6 +128,7 @@ internal fun HomeScreenContent(
             Column(modifier = Modifier.fillMaxSize()) {
                 HomeHeader(
                     presenter = presenter,
+                    state = state,
                     searchQuery = presenter.searchQuery.collectAsStateWithLifecycle().value,
                 )
 
@@ -149,6 +161,7 @@ internal fun HomeScreenContent(
 @Composable
 private fun HomeHeader(
     presenter: HomeScreenPresenter,
+    state: HomeUiState,
     searchQuery: String,
     modifier: Modifier = Modifier,
 ) {
@@ -157,12 +170,13 @@ private fun HomeHeader(
             .fillMaxWidth()
             .background(GlyphTheme.colors.surface)
             .padding(top = localPaddingValues.calculateTopPadding())
-            .padding(horizontal = 24.dp)
-            .padding(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+            .padding(bottom = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -172,15 +186,76 @@ private fun HomeHeader(
         SearchBar(
             value = searchQuery,
             onValueChange = presenter::onSearchQueryChanged,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+        TagFilterRow(
+            availableTags = state.availableTags,
+            selectedTagIds = state.selectedTagIdsForFilter,
+            onTagClick = presenter::onTagFilterClick,
+            onCreateTagClick = presenter::onCreateTagClick,
         )
     }
 }
 
 @Composable
+private fun TagFilterRow(
+    availableTags: List<Tag>,
+    selectedTagIds: Set<String>,
+    onTagClick: (String) -> Unit,
+    onCreateTagClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        item {
+            Box(
+                modifier = Modifier
+                    .clip(GlyphShape.button)
+                    .background(color = GlyphTheme.colors.surfaceVariant)
+                    .clickable { onCreateTagClick() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_add),
+                    contentDescription = stringResource(StringRes.string.tag_selection_create_new),
+                    tint = GlyphTheme.colors.textPrimary,
+                    modifier = Modifier.size(14.dp),
+                )
+            }
+        }
+
+        items(availableTags, key = { it.id }) { tag ->
+            val isSelected = selectedTagIds.contains(tag.id)
+            val backgroundColor = if (isSelected) tag.color.toGlyphColor().copy(alpha = 0.15f) else GlyphTheme.colors.surfaceVariant
+            val borderColor = if (isSelected) tag.color.toGlyphColor().copy(alpha = 0.5f) else Color.Transparent
+            val textColor = if (isSelected) tag.color.toGlyphColor() else GlyphTheme.colors.textSecondary
+
+            Box(
+                modifier = Modifier
+                    .clip(GlyphShape.button)
+                    .background(color = backgroundColor)
+                    .border(1.dp, borderColor, GlyphShape.button)
+                    .clickable { onTagClick(tag.id) }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+                Text(
+                    text = tag.name,
+                    style = GlyphTheme.typography.body.copy(color = textColor),
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun HomeBody(
-    state: ru.glyph.screen.home.ui.composable.model.HomeUiState,
+    state: HomeUiState,
     presenter: HomeScreenPresenter,
-    focusManager: androidx.compose.ui.focus.FocusManager,
+    focusManager: FocusManager,
     modifier: Modifier = Modifier,
 ) {
     val lazyListState = rememberLazyListState()

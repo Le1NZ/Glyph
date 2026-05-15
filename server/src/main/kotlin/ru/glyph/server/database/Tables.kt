@@ -33,3 +33,19 @@ object Notes : Table("notes") {
     val updatedAt = long("updated_at")
     override val primaryKey = PrimaryKey(id)
 }
+
+object Tags : Table("tags") {
+    val id = varchar("id", 36)
+    val userYandexId = varchar("user_yandex_id", 255).references(Users.yandexId)
+    val name = text("name")
+    val color = varchar("color", 16)
+    val createdAt = long("created_at")
+    val updatedAt = long("updated_at")
+    override val primaryKey = PrimaryKey(id)
+}
+
+object NoteTags : Table("note_tags") {
+    val noteId = varchar("note_id", 36).references(Notes.id, onDelete = ReferenceOption.CASCADE)
+    val tagId = varchar("tag_id", 36).references(Tags.id, onDelete = ReferenceOption.CASCADE)
+    override val primaryKey = PrimaryKey(noteId, tagId)
+}

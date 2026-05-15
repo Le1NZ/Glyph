@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -42,6 +44,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import ru.glyph.design.Res
 import ru.glyph.design.components.LoadingScreen
+import ru.glyph.design.ic_add
 import ru.glyph.design.ic_arrow_back
 import ru.glyph.design.ic_delete
 import ru.glyph.design.ic_edit
@@ -57,6 +60,7 @@ import ru.glyph.design.theme.GlyphShape
 import ru.glyph.design.theme.GlyphTheme
 import ru.glyph.design.theme.toGlyphColor
 import ru.glyph.model.Folder
+import ru.glyph.model.Tag
 import ru.glyph.screen.note.ui.NoteScreenViewModel
 import ru.glyph.screen.note.ui.state.NoteUiState
 import ru.glyph.string.resources.md_bold_cd
@@ -65,6 +69,7 @@ import ru.glyph.string.resources.md_heading_cd
 import ru.glyph.string.resources.md_italic_cd
 import ru.glyph.string.resources.md_list_cd
 import ru.glyph.string.resources.move_note_no_folder
+import ru.glyph.string.resources.note_add_tags
 import ru.glyph.string.resources.note_back_cd
 import ru.glyph.string.resources.note_delete_cd
 import ru.glyph.string.resources.note_edit_cd
@@ -80,17 +85,21 @@ internal fun NoteScreen(
     modifier: Modifier = Modifier,
 ) {
     val currentFolder by viewModel.currentFolder.collectAsStateWithLifecycle()
+    val currentTags by viewModel.currentTags.collectAsStateWithLifecycle()
+
     when (val state = viewModel.uiState.collectAsStateWithLifecycle().value) {
         is NoteUiState.Loading -> LoadingScreen()
 
         is NoteUiState.Editing -> NoteScreenContent(
             state = state,
             currentFolder = currentFolder,
+            currentTags = currentTags,
             onTitleChange = viewModel::onTitleChange,
             onContentChange = viewModel::onContentChange,
             onTogglePreview = viewModel::onTogglePreview,
             onDeleteClick = viewModel::onDeleteClick,
             onMoveClick = viewModel::onMoveClick,
+            onTagsClick = viewModel::onTagsClick,
             onBackClick = viewModel::onBackClick,
             modifier = modifier,
         )
@@ -101,11 +110,13 @@ internal fun NoteScreen(
 internal fun NoteScreenContent(
     state: NoteUiState.Editing,
     currentFolder: Folder?,
+    currentTags: List<Tag>,
     onTitleChange: (String) -> Unit,
     onContentChange: (String) -> Unit,
     onTogglePreview: () -> Unit,
     onDeleteClick: () -> Unit,
     onMoveClick: () -> Unit,
+    onTagsClick: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -134,6 +145,15 @@ internal fun NoteScreenContent(
         FolderChip(
             folder = currentFolder,
             onClick = onMoveClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(GlyphTheme.colors.surface)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+
+        TagsRow(
+            tags = currentTags,
+            onClick = onTagsClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .background(GlyphTheme.colors.surface)
@@ -446,6 +466,75 @@ private fun FolderChip(
             )
         }
         Spacer(modifier = Modifier.size(8.dp))
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TagsRow(
+    tags: List<Tag>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (tags.isEmpty()) {
+            Row(
+                modifier = Modifier
+                    .clip(GlyphShape.button)
+                    .background(color = GlyphTheme.colors.surfaceVariant)
+                    .clickable(onClick = onClick)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_add),
+                    contentDescription = null,
+                    tint = GlyphTheme.colors.textPrimary,
+                    modifier = Modifier.size(14.dp),
+                )
+                Text(
+                    text = stringResource(StringRes.string.note_add_tags),
+                    style = GlyphTheme.typography.body.copy(color = GlyphTheme.colors.textPrimary),
+                )
+            }
+        } else {
+            tags.forEach { tag ->
+                Box(
+                    modifier = Modifier
+                        .clip(GlyphShape.button)
+                        .background(color = tag.color.toGlyphColor().copy(alpha = 0.2f))
+                        .clickable(onClick = onClick)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                ) {
+                    Text(
+                        text = tag.name,
+                        style = GlyphTheme.typography.body.copy(color = tag.color.toGlyphColor()),
+                    )
+                }
+            }
+            
+            // Add button at the end
+            Box(
+                modifier = Modifier
+                    .clip(GlyphShape.button)
+                    .background(color = GlyphTheme.colors.surfaceVariant)
+                    .clickable(onClick = onClick)
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_add),
+                    contentDescription = null,
+                    tint = GlyphTheme.colors.textPrimary,
+                    modifier = Modifier.size(14.dp),
+                )
+            }
+        }
     }
 }
 

@@ -8,6 +8,7 @@ internal fun Note.toEntity() = NoteEntity(
     title = title,
     content = content,
     folderId = folderId,
+    tagIds = tagIds,
     createdAt = createdAt,
     updatedAt = updatedAt,
 )
@@ -17,6 +18,7 @@ internal fun NoteEntity.toDomain() = Note(
     title = title,
     content = content,
     folderId = folderId,
+    tagIds = tagIds,
     createdAt = createdAt,
     updatedAt = updatedAt,
 )
