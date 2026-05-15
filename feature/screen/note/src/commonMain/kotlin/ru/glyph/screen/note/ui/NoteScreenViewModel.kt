@@ -21,6 +21,7 @@ import org.jetbrains.compose.resources.stringResource
 import ru.glyph.database.api.FoldersRepository
 import ru.glyph.database.api.NotesRepository
 import ru.glyph.model.Folder
+import ru.glyph.model.Tag
 import ru.glyph.navigation.api.Navigator
 import ru.glyph.navigation.api.model.BottomSheet
 import ru.glyph.screen.note.ui.state.NoteUiState
@@ -34,6 +35,7 @@ internal class NoteScreenViewModel(
     private val noteId: String,
     private val notesRepository: NotesRepository,
     private val foldersRepository: FoldersRepository,
+    private val tagsRepository: ru.glyph.database.api.TagsRepository,
     private val navigator: Navigator,
 ) : ViewModel() {
 
@@ -41,6 +43,7 @@ internal class NoteScreenViewModel(
     val uiState = _uiState.asStateFlow()
 
     private val _currentFolderId = MutableStateFlow<String?>(null)
+    private val _currentTagIds = MutableStateFlow<List<String>>(emptyList())
 
     val currentFolder: StateFlow<Folder?> = combine(
         _currentFolderId,
@@ -49,10 +52,18 @@ internal class NoteScreenViewModel(
         if (id == null) null else folders.firstOrNull { it.id == id }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    val currentTags: StateFlow<List<Tag>> = combine(
+        _currentTagIds,
+        tagsRepository.observeAll(),
+    ) { ids, tags ->
+        tags.filter { it.id in ids }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     init {
         viewModelScope.launch {
             val note = notesRepository.getById(noteId)
             _currentFolderId.value = note?.folderId
+            _currentTagIds.value = note?.tagIds ?: emptyList()
             _uiState.value = NoteUiState.Editing(
                 title = note?.title ?: "",
                 content = note?.content ?: "",
@@ -115,6 +126,21 @@ internal class NoteScreenViewModel(
                 ),
             )
         }
+    }
+
+    fun onTagsClick() {
+        navigator.showOverlay(
+            overlay = BottomSheet.TagSelection(
+                noteId = noteId,
+                selectedTagIds = _currentTagIds.value,
+                onSave = { newTagIds ->
+                    viewModelScope.launch {
+                        notesRepository.setTags(noteId, newTagIds)
+                        _currentTagIds.value = newTagIds
+                    }
+                },
+            ),
+        )
     }
 
     fun onBackClick() {

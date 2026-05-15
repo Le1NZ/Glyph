@@ -4,11 +4,14 @@ import androidx.compose.runtime.Immutable
 import ru.glyph.design.components.FolderCardUiModel
 import ru.glyph.design.components.NoteCardUiModel
 import ru.glyph.design.theme.GlyphFolderColors
+import ru.glyph.model.Tag
 
 @Immutable
 internal data class HomeUiState(
     val folders: List<FolderCardUiModel> = emptyList(),
     val recentNotes: List<NoteCardUiModel> = emptyList(),
+    val availableTags: List<Tag> = emptyList(),
+    val selectedTagIdsForFilter: Set<String> = emptySet(),
     val isRefreshing: Boolean = false,
     val searchQuery: String = "",
 ) {

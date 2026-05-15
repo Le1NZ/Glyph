@@ -9,6 +9,7 @@ data class NoteDto(
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("folder_id") val folderId: String? = null,
+    @SerialName("tag_ids") val tagIds: List<String> = emptyList(),
     @SerialName("created_at") val createdAt: Long,
     @SerialName("updated_at") val updatedAt: Long,
 )
@@ -19,6 +20,7 @@ data class CreateNoteRequest(
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("folder_id") val folderId: String? = null,
+    @SerialName("tag_ids") val tagIds: List<String> = emptyList(),
     @SerialName("created_at") val createdAt: Long,
     @SerialName("updated_at") val updatedAt: Long,
 )
@@ -28,6 +30,7 @@ data class UpdateNoteRequest(
     @SerialName("title") val title: String,
     @SerialName("content") val content: String,
     @SerialName("folder_id") val folderId: String? = null,
+    @SerialName("tag_ids") val tagIds: List<String> = emptyList(),
     @SerialName("updated_at") val updatedAt: Long,
 )
 

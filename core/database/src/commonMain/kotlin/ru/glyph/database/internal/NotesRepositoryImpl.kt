@@ -62,6 +62,7 @@ internal class NotesRepositoryImpl(
             title = title,
             content = content,
             folderId = folderId,
+            tagIds = emptyList(),
             createdAt = now,
             updatedAt = now,
         )
@@ -95,6 +96,16 @@ internal class NotesRepositoryImpl(
         val existing = dao.getById(id) ?: return
         val updated = existing.copy(
             folderId = folderId,
+            updatedAt = currentTimeDuration().inWholeMilliseconds,
+        )
+
+        dao.upsert(updated)
+    }
+
+    override suspend fun setTags(id: String, tagIds: List<String>) {
+        val existing = dao.getById(id) ?: return
+        val updated = existing.copy(
+            tagIds = tagIds,
             updatedAt = currentTimeDuration().inWholeMilliseconds,
         )
 

@@ -39,6 +39,8 @@ interface NotesRepository {
 
     suspend fun setFolder(id: String, folderId: String?)
 
+    suspend fun setTags(id: String, tagIds: List<String>)
+
     suspend fun delete(id: String)
     suspend fun deleteAll()
 }

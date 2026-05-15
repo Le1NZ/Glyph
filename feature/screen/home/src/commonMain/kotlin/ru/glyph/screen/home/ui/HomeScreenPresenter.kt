@@ -17,6 +17,8 @@ internal interface HomeScreenPresenter {
     fun onFolderClick(id: String)
     fun onCreateFolderClick()
     fun onFolderActionsClick(id: String)
+    fun onTagFilterClick(tagId: String)
+    fun onCreateTagClick()
 }
 
 internal class HomeScreenPresenterImpl(
@@ -34,6 +36,8 @@ internal class HomeScreenPresenterImpl(
     override fun onFolderClick(id: String) = viewModel.onFolderClick(id)
     override fun onCreateFolderClick() = viewModel.onCreateFolderClick()
     override fun onFolderActionsClick(id: String) = viewModel.onFolderActionsClick(id)
+    override fun onTagFilterClick(tagId: String) = viewModel.onTagFilterClick(tagId)
+    override fun onCreateTagClick() = viewModel.onCreateTagClick()
 }
 
 internal class HomeScreenPresenterPreview : HomeScreenPresenter {
@@ -49,4 +53,6 @@ internal class HomeScreenPresenterPreview : HomeScreenPresenter {
     override fun onFolderClick(id: String) = Unit
     override fun onCreateFolderClick() = Unit
     override fun onFolderActionsClick(id: String) = Unit
+    override fun onTagFilterClick(tagId: String) = Unit
+    override fun onCreateTagClick() = Unit
 }

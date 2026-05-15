@@ -18,6 +18,7 @@ object NoteScreenLocalDi {
                 noteId = noteId,
                 notesRepository = get(),
                 foldersRepository = get(),
+                tagsRepository = get(),
                 navigator = get(),
             )
         }

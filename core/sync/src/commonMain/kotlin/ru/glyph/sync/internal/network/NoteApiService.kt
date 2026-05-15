@@ -9,6 +9,7 @@ internal interface NoteApiService {
         title: String,
         content: String,
         folderId: String?,
+        tagIds: List<String>,
         createdAt: Long,
         updatedAt: Long,
     ): NoteDto
@@ -17,6 +18,7 @@ internal interface NoteApiService {
         title: String,
         content: String,
         folderId: String?,
+        tagIds: List<String>,
         updatedAt: Long,
     ): NoteDto
     suspend fun delete(id: String)

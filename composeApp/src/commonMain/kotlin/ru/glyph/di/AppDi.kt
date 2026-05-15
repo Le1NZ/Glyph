@@ -17,6 +17,7 @@ import ru.glyph.screen.folder.api.di.FolderScreenLocalDi
 import ru.glyph.screen.note.api.di.NoteScreenLocalDi
 import ru.glyph.screen.profile.api.di.ProfileScreenDi
 import ru.glyph.sync.api.di.SyncLocalDi
+import ru.glyph.tag_bottom_sheets.di.TagBottomSheetsLocalDi
 
 internal object AppDi {
 
@@ -40,5 +41,6 @@ internal object AppDi {
         FolderScreenLocalDi.module,
         ConfirmBottomSheetLocalDi.module,
         FolderBottomSheetsLocalDi.module,
+        TagBottomSheetsLocalDi.module,
     )
 }
