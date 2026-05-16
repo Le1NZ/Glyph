@@ -17,6 +17,8 @@ import ru.glyph.server.routes.foldersRoutes
 import ru.glyph.server.routes.notesRoutes
 import ru.glyph.server.routes.profileRoutes
 import ru.glyph.server.routes.tagsRoutes
+import ru.glyph.server.routes.aiRoutes
+import ru.glyph.server.ai.AiService
 
 fun main() {
     embeddedServer(Netty, port = 8080, module = Application::module).start(wait = true)
@@ -40,10 +42,13 @@ fun Application.module() {
     configureDatabase()
     configureAuth()
 
+    val aiService = AiService()
+
     routing {
         notesRoutes()
         foldersRoutes()
         tagsRoutes()
         profileRoutes()
+        aiRoutes(aiService)
     }
 }

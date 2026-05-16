@@ -83,6 +83,7 @@ internal class HomeScreenViewModel(
             recentNotes = filteredNotes.map { it.toUiModel() },
             availableTags = tags,
             selectedTagIdsForFilter = selectedTags,
+            isLoading = false,
             isRefreshing = isRefreshing,
             searchQuery = query,
         )

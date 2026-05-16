@@ -12,6 +12,7 @@ internal data class HomeUiState(
     val recentNotes: List<NoteCardUiModel> = emptyList(),
     val availableTags: List<Tag> = emptyList(),
     val selectedTagIdsForFilter: Set<String> = emptySet(),
+    val isLoading: Boolean = true,
     val isRefreshing: Boolean = false,
     val searchQuery: String = "",
 ) {

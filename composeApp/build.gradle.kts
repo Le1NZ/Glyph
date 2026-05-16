@@ -62,6 +62,7 @@ kotlin {
             implementation(projects.feature.folderBottomSheets)
                 implementation(projects.feature.tagBottomSheets)
                 implementation(projects.feature.shareBottomSheet)
+                implementation(projects.feature.aiBottomSheet)
             implementation(projects.core.database)
             implementation(projects.core.sync)
         }

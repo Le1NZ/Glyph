@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,6 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -53,6 +55,7 @@ import ru.glyph.design.ic_format_code
 import ru.glyph.design.ic_format_heading
 import ru.glyph.design.ic_format_italic
 import ru.glyph.design.ic_format_list
+import ru.glyph.design.ic_magic
 import ru.glyph.design.ic_share
 import ru.glyph.design.ic_visibility
 import ru.glyph.design.padding.localPaddingValues
@@ -103,6 +106,7 @@ internal fun NoteScreen(
             onTagsClick = viewModel::onTagsClick,
             onBackClick = viewModel::onBackClick,
             onShareClick = viewModel::onShareClick,
+            onAiAssistantClick = viewModel::onAiAssistantClick,
             modifier = modifier,
         )
     }
@@ -114,19 +118,16 @@ internal fun NoteScreenContent(
     currentFolder: Folder?,
     currentTags: List<Tag>,
     onTitleChange: (String) -> Unit,
-    onContentChange: (String) -> Unit,
+    onContentChange: (TextFieldValue) -> Unit,
     onTogglePreview: () -> Unit,
     onDeleteClick: () -> Unit,
     onMoveClick: () -> Unit,
     onTagsClick: () -> Unit,
     onBackClick: () -> Unit,
     onShareClick: () -> Unit,
+    onAiAssistantClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var textFieldContent by remember {
-        mutableStateOf(TextFieldValue(state.content))
-    }
-
     val bottomPadding = localPaddingValues.calculateBottomPadding()
     val paddingValues = PaddingValues(bottom = bottomPadding)
     Column(
@@ -146,6 +147,7 @@ internal fun NoteScreenContent(
             onTogglePreview = onTogglePreview,
             onDeleteClick = onDeleteClick,
             onShareClick = onShareClick,
+            onAiAssistantClick = onAiAssistantClick,
         )
 
         FolderChip(
@@ -176,7 +178,7 @@ internal fun NoteScreenContent(
             is NoteUiState.Editing -> {
                 if (state.isPreviewMode) {
                     NotePreview(
-                        content = state.content,
+                        content = state.content.text,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth(),
@@ -184,20 +186,17 @@ internal fun NoteScreenContent(
                 } else {
                     NoteEditor(
                         title = state.title,
-                        contentTFV = textFieldContent,
+                        contentTFV = state.content,
                         onTitleChange = onTitleChange,
                         onContentChange = { newTextFieldContent ->
                             val processed = applyMarkdownContinuation(
-                                old = textFieldContent,
+                                old = state.content,
                                 new = newTextFieldContent,
                             )
-
-                            textFieldContent = processed
-                            onContentChange(processed.text)
+                            onContentChange(processed)
                         },
                         onShortcut = { newTextFieldContent ->
-                            textFieldContent = newTextFieldContent
-                            onContentChange(newTextFieldContent.text)
+                            onContentChange(newTextFieldContent)
                         },
                         modifier = Modifier
                             .weight(1f)
@@ -219,6 +218,7 @@ private fun NoteTopBar(
     onTogglePreview: () -> Unit,
     onDeleteClick: () -> Unit,
     onShareClick: () -> Unit,
+    onAiAssistantClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -264,6 +264,15 @@ private fun NoteTopBar(
         }
 
         if (!isReadOnly) {
+            IconButton(onClick = onAiAssistantClick) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_magic),
+                    contentDescription = "AI Assistant",
+                    tint = Color.Unspecified,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
+
             IconButton(onClick = onTogglePreview) {
                 Icon(
                     painter = painterResource(
