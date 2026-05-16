@@ -18,6 +18,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
 import org.jetbrains.compose.resources.stringResource
 import ru.glyph.database.api.FoldersRepository
 import ru.glyph.database.api.NotesRepository
@@ -73,7 +75,7 @@ internal class NoteScreenViewModel(
             
             _uiState.value = NoteUiState.Editing(
                 title = note?.title ?: "",
-                content = note?.content ?: "",
+                content = TextFieldValue(note?.content ?: ""),
                 isPreviewMode = isReadOnly,
                 isReadOnly = isReadOnly,
                 isOwner = isOwner,
@@ -83,7 +85,7 @@ internal class NoteScreenViewModel(
         uiState
             .filterIsInstance<NoteUiState.Editing>()
             .filter { !it.isReadOnly }
-            .map { Pair(it.title, it.content) }
+            .map { Pair(it.title, it.content.text) }
             .distinctUntilChanged()
             .debounce(1.seconds)
             .collectIn(viewModelScope) { pair ->
@@ -97,7 +99,7 @@ internal class NoteScreenViewModel(
         _uiState.value = current.copy(title = title)
     }
 
-    fun onContentChange(content: String) {
+    fun onContentChange(content: TextFieldValue) {
         val current = _uiState.value as? NoteUiState.Editing ?: return
         if (current.isReadOnly) return
         _uiState.value = current.copy(content = content)
@@ -160,6 +162,25 @@ internal class NoteScreenViewModel(
         navigator.showOverlay(BottomSheet.ShareNote(noteId))
     }
 
+    fun onAiAssistantClick() {
+        val current = _uiState.value as? NoteUiState.Editing ?: return
+        if (current.isReadOnly) return
+        
+        navigator.showOverlay(
+            BottomSheet.AiAssistant(
+                noteContent = current.content.text,
+                onInsertText = { generatedText ->
+                    val newText = if (current.content.text.isBlank()) {
+                        generatedText
+                    } else {
+                        "${current.content.text}\n\n$generatedText"
+                    }
+                    onContentChange(TextFieldValue(newText, TextRange(newText.length)))
+                }
+            )
+        )
+    }
+
     fun onBackClick() {
         navigator.popBackStack()
     }
@@ -171,7 +192,7 @@ internal class NoteScreenViewModel(
         notesRepository.update(
             id = noteId,
             title = state.title,
-            content = state.content,
+            content = state.content.text,
         )
     }
 

@@ -82,6 +82,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import ru.glyph.design.theme.toGlyphColor
 import ru.glyph.model.Tag
 
+import ru.glyph.design.components.LoadingScreen
+
 @Composable
 internal fun HomeScreen(
     viewModel: HomeScreenViewModel,
@@ -132,11 +134,15 @@ internal fun HomeScreenContent(
                     searchQuery = presenter.searchQuery.collectAsStateWithLifecycle().value,
                 )
 
-                HomeBody(
-                    state = state,
-                    presenter = presenter,
-                    focusManager = focusManager,
-                )
+                if (state.isLoading) {
+                    LoadingScreen(modifier = Modifier.fillMaxSize())
+                } else {
+                    HomeBody(
+                        state = state,
+                        presenter = presenter,
+                        focusManager = focusManager,
+                    )
+                }
             }
 
             FloatingActionButton(

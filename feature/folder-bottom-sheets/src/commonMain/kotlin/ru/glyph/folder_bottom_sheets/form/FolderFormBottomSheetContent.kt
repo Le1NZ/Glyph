@@ -70,7 +70,7 @@ internal fun FolderFormBottomSheetContent(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(color = colors.surfaceVariant, shape = GlyphShape.card)
+                        .background(color = GlyphTheme.colors.background, shape = GlyphShape.card)
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                 ) {
                     if (name.isEmpty()) {
@@ -84,7 +84,8 @@ internal fun FolderFormBottomSheetContent(
                     innerTextField()
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth(),
         )
 
         Spacer(modifier = Modifier.height(20.dp))

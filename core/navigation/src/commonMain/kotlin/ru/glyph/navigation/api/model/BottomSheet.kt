@@ -51,6 +51,11 @@ sealed class BottomSheet : OverlayDestination() {
     data class ShareNote(
         val noteId: String,
     ) : BottomSheet()
+
+    data class AiAssistant(
+        val noteContent: String,
+        val onInsertText: (String) -> Unit,
+    ) : BottomSheet()
 }
 
 @Immutable

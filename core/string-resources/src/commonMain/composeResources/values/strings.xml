@@ -99,4 +99,16 @@
     <string name="share_bottom_sheet_permission_write">Редактирование</string>
     <string name="share_bottom_sheet_delete_cd">Удалить</string>
     <string name="share_bottom_sheet_error">Ошибка</string>
+
+    <!-- AI Assistant -->
+    <string name="ai_assistant_title">AI Ассистент</string>
+    <string name="ai_assistant_greeting">Привет! Я твой AI-помощник. Напиши, что нужно сделать с заметкой, или выбери быстрое действие.</string>
+    <string name="ai_assistant_disclaimer">AI может ошибаться. Проверяйте важную информацию.</string>
+    <string name="ai_assistant_prompt_hint">Напиши запрос...</string>
+    <string name="ai_assistant_quick_shorter">Сделай короче</string>
+    <string name="ai_assistant_quick_fix">Исправь ошибки</string>
+    <string name="ai_assistant_quick_translate">Переведи на английский</string>
+    <string name="ai_assistant_insert_button">Вставить</string>
+    <string name="ai_assistant_loading">Генерируем ответ...</string>
+    <string name="ai_assistant_retry_button">Попробовать снова</string>
 </resources>
