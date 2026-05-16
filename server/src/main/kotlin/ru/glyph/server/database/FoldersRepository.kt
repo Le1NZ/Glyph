@@ -12,20 +12,45 @@ import ru.glyph.server.model.CreateFolderRequest
 import ru.glyph.server.model.FolderDto
 import ru.glyph.server.model.UpdateFolderRequest
 
+import ru.glyph.server.model.FolderColor
+import ru.glyph.server.model.SharedFolderConstants
+
+import ru.glyph.server.model.FolderPermission
+
 object FoldersRepository {
 
     suspend fun getAll(userId: String): List<FolderDto> = query {
-        Folders.selectAll()
+        val folders = Folders.selectAll()
             .where { Folders.userYandexId eq userId }
             .orderBy(Folders.createdAt)
-            .map { it.toDto() }
+            .map { it.toDto(permission = FolderPermission.WRITE) }
+            .toMutableList()
+
+        val userEmail = Users.selectAll().where { Users.yandexId eq userId }.firstOrNull()?.get(Users.email)
+        if (userEmail != null) {
+            val hasSharedNotes = (Notes innerJoin NoteShares).selectAll()
+                .where { NoteShares.email eq userEmail }
+                .count() > 0
+            if (hasSharedNotes) {
+                folders.add(FolderDto(
+                    id = SharedFolderConstants.ID,
+                    name = SharedFolderConstants.NAME,
+                    color = SharedFolderConstants.COLOR,
+                    parentFolderId = null,
+                    permission = FolderPermission.READ,
+                    createdAt = 0,
+                    updatedAt = 0,
+                ))
+            }
+        }
+        folders
     }
 
     suspend fun getById(id: String, userId: String): FolderDto? = query {
         Folders.selectAll()
             .where { (Folders.id eq id) and (Folders.userYandexId eq userId) }
             .firstOrNull()
-            ?.toDto()
+            ?.toDto(permission = FolderPermission.WRITE)
     }
 
     suspend fun create(userId: String, request: CreateFolderRequest): FolderDto = query {
@@ -33,7 +58,7 @@ object FoldersRepository {
             it[id] = request.id
             it[userYandexId] = userId
             it[name] = request.name
-            it[color] = request.color
+            it[color] = request.color.name
             it[parentFolderId] = request.parentFolderId
             it[createdAt] = request.createdAt
             it[updatedAt] = request.updatedAt
@@ -41,7 +66,7 @@ object FoldersRepository {
         Folders.selectAll()
             .where { Folders.id eq request.id }
             .first()
-            .toDto()
+            .toDto(permission = FolderPermission.WRITE)
     }
 
     suspend fun update(id: String, userId: String, request: UpdateFolderRequest): FolderDto? = query {
@@ -51,18 +76,18 @@ object FoldersRepository {
             ?: return@query null
 
         if (request.updatedAt < existing[Folders.updatedAt]) {
-            return@query existing.toDto()
+            return@query existing.toDto(permission = FolderPermission.WRITE)
         }
 
         Folders.update(
             where = { (Folders.id eq id) and (Folders.userYandexId eq userId) }
         ) {
             it[name] = request.name
-            it[color] = request.color
+            it[color] = request.color.name
             it[parentFolderId] = request.parentFolderId
             it[updatedAt] = request.updatedAt
         }
-        Folders.selectAll().where { Folders.id eq id }.firstOrNull()?.toDto()
+        Folders.selectAll().where { Folders.id eq id }.firstOrNull()?.toDto(permission = FolderPermission.WRITE)
     }
 
     suspend fun delete(id: String, userId: String): Boolean = query {
@@ -72,11 +97,12 @@ object FoldersRepository {
     private suspend fun <T> query(block: () -> T): T =
         newSuspendedTransaction { block() }
 
-    private fun ResultRow.toDto() = FolderDto(
+    private fun ResultRow.toDto(permission: FolderPermission) = FolderDto(
         id = this[Folders.id],
         name = this[Folders.name],
-        color = this[Folders.color],
+        color = FolderColor.valueOf(this[Folders.color]),
         parentFolderId = this[Folders.parentFolderId],
+        permission = permission,
         createdAt = this[Folders.createdAt],
         updatedAt = this[Folders.updatedAt],
     )

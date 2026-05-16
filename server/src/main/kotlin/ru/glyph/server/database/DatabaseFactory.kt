@@ -20,7 +20,7 @@ fun Application.configureDatabase() {
 
     @Suppress("DEPRECATION")
     transaction {
-        SchemaUtils.createMissingTablesAndColumns(Users, Folders, Notes, Tags, NoteTags)
+        SchemaUtils.createMissingTablesAndColumns(Users, Folders, Notes, Tags, NoteTags, NoteShares)
     }
 
     log.info("Database connected: $url")

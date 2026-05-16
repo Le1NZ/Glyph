@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.Table
 
 object Users : Table("users") {
     val yandexId = varchar("yandex_id", 255)
+    val email = varchar("email", 255).nullable()
     override val primaryKey = PrimaryKey(yandexId)
 }
 
@@ -48,4 +49,11 @@ object NoteTags : Table("note_tags") {
     val noteId = varchar("note_id", 36).references(Notes.id, onDelete = ReferenceOption.CASCADE)
     val tagId = varchar("tag_id", 36).references(Tags.id, onDelete = ReferenceOption.CASCADE)
     override val primaryKey = PrimaryKey(noteId, tagId)
+}
+
+object NoteShares : Table("note_shares") {
+    val noteId = varchar("note_id", 36).references(Notes.id, onDelete = ReferenceOption.CASCADE)
+    val email = varchar("email", 255)
+    val permission = varchar("permission", 16) // "READ" or "WRITE"
+    override val primaryKey = PrimaryKey(noteId, email)
 }

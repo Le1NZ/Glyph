@@ -14,6 +14,8 @@ import ru.glyph.utils.clock.currentTimeDuration
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+import ru.glyph.model.FolderPermission
+
 @OptIn(ExperimentalUuidApi::class)
 internal class FoldersRepositoryImpl(
     private val dao: FolderDao,
@@ -49,6 +51,7 @@ internal class FoldersRepositoryImpl(
             name = name,
             color = color.name,
             parentFolderId = parentFolderId,
+            permission = FolderPermission.WRITE.name,
             createdAt = now,
             updatedAt = now,
         )

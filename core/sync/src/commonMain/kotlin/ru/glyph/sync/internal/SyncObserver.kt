@@ -16,6 +16,7 @@ import ru.glyph.database.api.NotesRepository
 import ru.glyph.model.Note
 import ru.glyph.sync.api.SyncBootstrap
 import ru.glyph.sync.internal.network.NoteApiService
+import ru.glyph.sync.internal.network.dto.NoteDto
 import ru.glyph.utils.flow.collectLatestIn
 import ru.glyph.utils.flow.windowedWithPrevious
 
@@ -67,6 +68,7 @@ internal class SyncObserver(
                         content = dto.content,
                         folderId = dto.folderId,
                         tagIds = dto.tagIds,
+                        permission = dto.permission,
                         createdAt = dto.createdAt,
                         updatedAt = dto.updatedAt,
                     )
@@ -134,7 +136,7 @@ internal class SyncObserver(
 
     private suspend fun applyServerResponse(
         pushed: Note,
-        serverNote: ru.glyph.sync.internal.network.dto.NoteDto
+        serverNote: NoteDto
     ) {
         val incoming = Note(
             id = serverNote.id,
@@ -142,6 +144,7 @@ internal class SyncObserver(
             content = serverNote.content,
             folderId = serverNote.folderId,
             tagIds = serverNote.tagIds,
+            permission = serverNote.permission,
             createdAt = serverNote.createdAt,
             updatedAt = serverNote.updatedAt,
         )

@@ -7,8 +7,9 @@ import kotlinx.serialization.Serializable
 data class FolderDto(
     @SerialName("id") val id: String,
     @SerialName("name") val name: String,
-    @SerialName("color") val color: String,
+    @SerialName("color") val color: FolderColor,
     @SerialName("parent_folder_id") val parentFolderId: String? = null,
+    @SerialName("permission") val permission: FolderPermission,
     @SerialName("created_at") val createdAt: Long,
     @SerialName("updated_at") val updatedAt: Long,
 )
@@ -17,7 +18,7 @@ data class FolderDto(
 data class CreateFolderRequest(
     @SerialName("id") val id: String,
     @SerialName("name") val name: String,
-    @SerialName("color") val color: String,
+    @SerialName("color") val color: FolderColor,
     @SerialName("parent_folder_id") val parentFolderId: String? = null,
     @SerialName("created_at") val createdAt: Long,
     @SerialName("updated_at") val updatedAt: Long,
@@ -26,7 +27,7 @@ data class CreateFolderRequest(
 @Serializable
 data class UpdateFolderRequest(
     @SerialName("name") val name: String,
-    @SerialName("color") val color: String,
+    @SerialName("color") val color: FolderColor,
     @SerialName("parent_folder_id") val parentFolderId: String? = null,
     @SerialName("updated_at") val updatedAt: Long,
 )

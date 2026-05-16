@@ -37,7 +37,7 @@ fun Application.configureAuth() {
             }
             authenticate { credential ->
                 val userInfo = validateYandexToken(credential.token) ?: return@authenticate null
-                NotesRepository.ensureUser(userInfo.id)
+                NotesRepository.ensureUser(userInfo.id, userInfo.defaultEmail)
                 UserIdPrincipal(userInfo.id)
             }
         }

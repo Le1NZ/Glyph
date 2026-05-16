@@ -12,4 +12,5 @@ internal data class FolderScreenUiState(
     val subfolders: List<FolderCardUiModel> = emptyList(),
     val notes: List<NoteCardUiModel> = emptyList(),
     val isReady: Boolean = false,
+    val isReadOnly: Boolean = false,
 )

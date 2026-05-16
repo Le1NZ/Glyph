@@ -18,6 +18,30 @@ import ru.glyph.string.resources.error_retry_button
 import ru.glyph.string.resources.error_text
 
 @Composable
+fun ErrorBlock(
+    onRetryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = stringResource(Res.string.error_text),
+            style = GlyphTheme.typography.heading1,
+            color = GlyphTheme.colors.textPrimary,
+        )
+
+        PrimaryButton(
+            text = stringResource(Res.string.error_retry_button),
+            onClick = onRetryClick,
+            modifier = Modifier,
+        )
+    }
+}
+
+@Composable
 fun ErrorScreen(
     onRetryClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -29,21 +53,6 @@ fun ErrorScreen(
             .padding(all = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = stringResource(Res.string.error_text),
-                style = GlyphTheme.typography.heading1,
-                color = GlyphTheme.colors.textPrimary,
-            )
-
-            PrimaryButton(
-                text = stringResource(Res.string.error_retry_button),
-                onClick = onRetryClick,
-                modifier = modifier,
-            )
-        }
+        ErrorBlock(onRetryClick = onRetryClick)
     }
 }

@@ -25,12 +25,12 @@ class NotesRepositoryTest {
             url = "jdbc:h2:mem:notesrepo;DB_CLOSE_DELAY=-1",
             driver = "org.h2.Driver",
         )
-        transaction { SchemaUtils.create(Users, Notes) }
+        transaction { SchemaUtils.create(Users, Folders, Notes, Tags, NoteTags, NoteShares) }
     }
 
     @AfterTest
     fun tearDown() {
-        transaction { SchemaUtils.drop(Notes, Users) }
+        transaction { SchemaUtils.drop(NoteShares, NoteTags, Tags, Notes, Folders, Users) }
     }
 
     // ─── ensureUser ───────────────────────────────────────────────────────────
@@ -64,8 +64,8 @@ class NotesRepositoryTest {
         NotesRepository.ensureUser(userId)
         NotesRepository.ensureUser(otherUser)
 
-        NotesRepository.create(userId, CreateNoteRequest("n1", "T1", "C1", 100L, 200L))
-        NotesRepository.create(otherUser, CreateNoteRequest("n2", "T2", "C2", 100L, 200L))
+        NotesRepository.create(userId, CreateNoteRequest("n1", "T1", "C1", null, emptyList(), 100L, 200L))
+        NotesRepository.create(otherUser, CreateNoteRequest("n2", "T2", "C2", null, emptyList(), 100L, 200L))
 
         val notes = NotesRepository.getAll(userId)
         assertEquals(1, notes.size)
@@ -75,8 +75,8 @@ class NotesRepositoryTest {
     @Test
     fun `getAll returns multiple notes ordered by updatedAt`() = runTest {
         NotesRepository.ensureUser(userId)
-        NotesRepository.create(userId, CreateNoteRequest("n1", "First", "C1", 100L, 100L))
-        NotesRepository.create(userId, CreateNoteRequest("n2", "Second", "C2", 100L, 200L))
+        NotesRepository.create(userId, CreateNoteRequest("n1", "First", "C1", null, emptyList(), 100L, 100L))
+        NotesRepository.create(userId, CreateNoteRequest("n2", "Second", "C2", null, emptyList(), 100L, 200L))
 
         val notes = NotesRepository.getAll(userId)
         assertEquals(2, notes.size)
@@ -94,6 +94,8 @@ class NotesRepositoryTest {
             id = "note-xyz",
             title = "My Title",
             content = "My Content",
+            folderId = null,
+            tagIds = emptyList(),
             createdAt = 1000L,
             updatedAt = 2000L,
         )
@@ -111,7 +113,7 @@ class NotesRepositoryTest {
     @Test
     fun `getById returns note when it belongs to user`() = runTest {
         NotesRepository.ensureUser(userId)
-        NotesRepository.create(userId, CreateNoteRequest("n1", "T", "C", 1L, 1L))
+        NotesRepository.create(userId, CreateNoteRequest("n1", "T", "C", null, emptyList(), 1L, 1L))
 
         val note = NotesRepository.getById("n1", userId)
         assertNotNull(note)
@@ -123,7 +125,7 @@ class NotesRepositoryTest {
         val otherUser = "user-2"
         NotesRepository.ensureUser(userId)
         NotesRepository.ensureUser(otherUser)
-        NotesRepository.create(userId, CreateNoteRequest("n1", "T", "C", 1L, 1L))
+        NotesRepository.create(userId, CreateNoteRequest("n1", "T", "C", null, emptyList(), 1L, 1L))
 
         val note = NotesRepository.getById("n1", otherUser)
         assertNull(note)
@@ -140,9 +142,9 @@ class NotesRepositoryTest {
     @Test
     fun `update changes title, content and updatedAt`() = runTest {
         NotesRepository.ensureUser(userId)
-        NotesRepository.create(userId, CreateNoteRequest("n1", "Old Title", "Old Content", 1L, 1L))
+        NotesRepository.create(userId, CreateNoteRequest("n1", "Old Title", "Old Content", null, emptyList(), 1L, 1L))
 
-        val updated = NotesRepository.update("n1", userId, UpdateNoteRequest("New Title", "New Content", 999L))
+        val updated = NotesRepository.update("n1", userId, UpdateNoteRequest("New Title", "New Content", null, emptyList(), 999L))
 
         assertNotNull(updated)
         assertEquals("New Title", updated.title)
@@ -155,9 +157,9 @@ class NotesRepositoryTest {
         val otherUser = "user-2"
         NotesRepository.ensureUser(userId)
         NotesRepository.ensureUser(otherUser)
-        NotesRepository.create(userId, CreateNoteRequest("n1", "T", "C", 1L, 1L))
+        NotesRepository.create(userId, CreateNoteRequest("n1", "T", "C", null, emptyList(), 1L, 1L))
 
-        val result = NotesRepository.update("n1", otherUser, UpdateNoteRequest("X", "X", 1L))
+        val result = NotesRepository.update("n1", otherUser, UpdateNoteRequest("X", "X", null, emptyList(), 1L))
         assertNull(result)
     }
 
@@ -166,7 +168,7 @@ class NotesRepositoryTest {
     @Test
     fun `delete removes note and returns true`() = runTest {
         NotesRepository.ensureUser(userId)
-        NotesRepository.create(userId, CreateNoteRequest("n1", "T", "C", 1L, 1L))
+        NotesRepository.create(userId, CreateNoteRequest("n1", "T", "C", null, emptyList(), 1L, 1L))
 
         val deleted = NotesRepository.delete("n1", userId)
 
@@ -179,7 +181,7 @@ class NotesRepositoryTest {
         val otherUser = "user-2"
         NotesRepository.ensureUser(userId)
         NotesRepository.ensureUser(otherUser)
-        NotesRepository.create(userId, CreateNoteRequest("n1", "T", "C", 1L, 1L))
+        NotesRepository.create(userId, CreateNoteRequest("n1", "T", "C", null, emptyList(), 1L, 1L))
 
         val deleted = NotesRepository.delete("n1", otherUser)
 

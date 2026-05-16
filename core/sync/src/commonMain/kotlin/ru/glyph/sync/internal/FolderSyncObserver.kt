@@ -14,6 +14,7 @@ import ru.glyph.database.api.FoldersRepository
 import ru.glyph.model.Folder
 import ru.glyph.model.FolderColor
 import ru.glyph.sync.internal.network.FolderApiService
+import ru.glyph.sync.internal.network.dto.FolderDto
 import ru.glyph.utils.flow.collectLatestIn
 import ru.glyph.utils.flow.windowedWithPrevious
 
@@ -52,6 +53,7 @@ internal class FolderSyncObserver(
                     name = dto.name,
                     color = FolderColor.fromKey(dto.color),
                     parentFolderId = dto.parentFolderId,
+                    permission = dto.permission,
                     createdAt = dto.createdAt,
                     updatedAt = dto.updatedAt,
                 ),
@@ -114,13 +116,14 @@ internal class FolderSyncObserver(
 
     private suspend fun applyServerResponse(
         pushed: Folder,
-        serverFolder: ru.glyph.sync.internal.network.dto.FolderDto,
+        serverFolder: FolderDto,
     ) {
         val incoming = Folder(
             id = serverFolder.id,
             name = serverFolder.name,
             color = FolderColor.fromKey(serverFolder.color),
             parentFolderId = serverFolder.parentFolderId,
+            permission = serverFolder.permission,
             createdAt = serverFolder.createdAt,
             updatedAt = serverFolder.updatedAt,
         )
