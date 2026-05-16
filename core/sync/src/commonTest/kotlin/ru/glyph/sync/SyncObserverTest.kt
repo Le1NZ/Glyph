@@ -17,14 +17,18 @@ import ru.glyph.database.api.FoldersRepository
 import ru.glyph.database.api.NotesRepository
 import ru.glyph.model.Folder
 import ru.glyph.model.FolderColor
+import ru.glyph.model.FolderPermission
 import ru.glyph.model.Note
+import ru.glyph.model.NotePermission
 import ru.glyph.sync.internal.FolderSyncObserver
 import ru.glyph.sync.internal.SyncGate
 import ru.glyph.sync.internal.SyncObserver
+import ru.glyph.sync.internal.TagSyncObserver
 import ru.glyph.sync.internal.network.FolderApiService
 import ru.glyph.sync.internal.network.NoteApiService
 import ru.glyph.sync.internal.network.dto.FolderDto
 import ru.glyph.sync.internal.network.dto.NoteDto
+import ru.glyph.sync.internal.network.dto.TagDto
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -52,7 +56,16 @@ class SyncObserverTest {
 
         override suspend fun create(title: String, content: String, folderId: String?): String {
             val id = "gen-${_notes.value.size}"
-            _notes.value += Note(id, title, content, folderId, 0L, 0L)
+            _notes.value += Note(
+                id = id,
+                title = title,
+                content = content,
+                folderId = folderId,
+                tagIds = emptyList(),
+                permission = NotePermission.WRITE,
+                createdAt = 0L,
+                updatedAt = 0L
+            )
             return id
         }
 
@@ -78,6 +91,13 @@ class SyncObserverTest {
             _notes.value = list
         }
 
+        override suspend fun setTags(id: String, tagIds: List<String>) {
+            val list = _notes.value.toMutableList()
+            val idx = list.indexOfFirst { it.id == id }
+            if (idx >= 0) list[idx] = list[idx].copy(tagIds = tagIds)
+            _notes.value = list
+        }
+
         override suspend fun delete(id: String) {
             _notes.value = _notes.value.filter { it.id != id }
         }
@@ -96,25 +116,38 @@ class SyncObserverTest {
         private val _folders = MutableStateFlow<List<Folder>>(emptyList())
 
         override fun observeAll(): Flow<List<Folder>> = _folders.asStateFlow()
-        override fun observeByParent(parentFolderId: String?): Flow<List<Folder>> = _folders.asStateFlow()
+        override fun observeByParent(parentFolderId: String?): Flow<List<Folder>> =
+            _folders.asStateFlow()
+
         override fun observeSubfolderCounts(): Flow<Map<String, Int>> = MutableStateFlow(emptyMap())
         override suspend fun getById(id: String) = _folders.value.find { it.id == id }
         override suspend fun create(name: String, parentFolderId: String?): String {
             val id = "folder-${_folders.value.size}"
-            _folders.value += Folder(id, name, FolderColor.BLUE, parentFolderId, 0L, 0L)
+            _folders.value += Folder(
+                id = id,
+                name = name,
+                color = FolderColor.BLUE,
+                parentFolderId = parentFolderId,
+                permission = FolderPermission.WRITE,
+                createdAt = 0L,
+                updatedAt = 0L,
+            )
             return id
         }
+
         override suspend fun upsert(folder: Folder) {
             val list = _folders.value.toMutableList()
             val idx = list.indexOfFirst { it.id == folder.id }
             if (idx >= 0) list[idx] = folder else list.add(folder)
             _folders.value = list
         }
+
         override suspend fun rename(id: String, name: String) = Unit
         override suspend fun setColor(id: String, color: FolderColor) = Unit
         override suspend fun delete(id: String) {
             _folders.value = _folders.value.filter { it.id != id }
         }
+
         override suspend fun deleteAll() {
             _folders.value = emptyList()
         }
@@ -140,11 +173,21 @@ class SyncObserverTest {
             title: String,
             content: String,
             folderId: String?,
+            tagIds: List<String>,
             createdAt: Long,
             updatedAt: Long,
         ): NoteDto {
             createCalls.add(id)
-            return NoteDto(id, title, content, folderId, createdAt, updatedAt)
+            return NoteDto(
+                id = id,
+                title = title,
+                content = content,
+                folderId = folderId,
+                tagIds = tagIds,
+                permission = NotePermission.WRITE,
+                createdAt = createdAt,
+                updatedAt = updatedAt,
+            )
         }
 
         override suspend fun update(
@@ -152,10 +195,20 @@ class SyncObserverTest {
             title: String,
             content: String,
             folderId: String?,
+            tagIds: List<String>,
             updatedAt: Long,
         ): NoteDto {
             updateCalls.add(id)
-            return NoteDto(id, title, content, folderId, 0L, updatedAt)
+            return NoteDto(
+                id = id,
+                title = title,
+                content = content,
+                folderId = folderId,
+                tagIds = tagIds,
+                permission = NotePermission.WRITE,
+                createdAt = 0L,
+                updatedAt = updatedAt,
+            )
         }
 
         override suspend fun delete(id: String) {
@@ -172,14 +225,16 @@ class SyncObserverTest {
             parentFolderId: String?,
             createdAt: Long,
             updatedAt: Long,
-        ) = FolderDto(id, name, color, parentFolderId, createdAt, updatedAt)
+        ) = FolderDto(id, name, color, parentFolderId, FolderPermission.WRITE, createdAt, updatedAt)
+
         override suspend fun update(
             id: String,
             name: String,
             color: String,
             parentFolderId: String?,
             updatedAt: Long,
-        ) = FolderDto(id, name, color, parentFolderId, 0L, updatedAt)
+        ) = FolderDto(id, name, color, parentFolderId, FolderPermission.WRITE, 0L, updatedAt)
+
         override suspend fun delete(id: String) = Unit
     }
 
@@ -196,6 +251,30 @@ class SyncObserverTest {
 
     // ─── Helper ──────────────────────────────────────────────────────────────
 
+    private class FakeTagApiService : ru.glyph.sync.internal.network.TagApiService {
+        override suspend fun getAll() = emptyList<TagDto>()
+        override suspend fun create(
+            id: String,
+            name: String,
+            color: String,
+            createdAt: Long,
+            updatedAt: Long
+        ) = TagDto(id, name, color, createdAt, updatedAt)
+
+        override suspend fun update(id: String, name: String, color: String, updatedAt: Long) =
+            TagDto(id, name, color, 0L, updatedAt)
+
+        override suspend fun delete(id: String) {}
+    }
+
+    private class FakeTagsRepository : ru.glyph.database.api.TagsRepository {
+        override fun observeAll() = MutableStateFlow(emptyList<ru.glyph.model.Tag>())
+        override suspend fun getById(id: String) = null
+        override suspend fun upsert(tag: ru.glyph.model.Tag) {}
+        override suspend fun deleteById(id: String) {}
+        override suspend fun deleteAll() {}
+    }
+
     private fun observer(
         notesRepo: NotesRepository,
         apiService: NoteApiService,
@@ -210,21 +289,45 @@ class SyncObserverTest {
             syncGate = gate,
             scope = scope,
         )
+        val tagSync = TagSyncObserver(
+            tagsRepository = FakeTagsRepository(),
+            apiService = FakeTagApiService(),
+            userCenter = userCenter,
+            syncGate = gate,
+            scope = scope,
+        )
         return SyncObserver(
             notesRepository = notesRepo,
             apiService = apiService,
             userCenter = userCenter,
             folderSyncObserver = folderSync,
+            tagSyncObserver = tagSync,
             syncGate = gate,
             scope = scope,
         )
     }
 
-    private fun note(id: String, updatedAt: Long = 0L) =
-        Note(id, "Title $id", "Content $id", null, 0L, updatedAt)
+    private fun note(id: String, updatedAt: Long = 0L) = Note(
+        id = id,
+        title = "Title $id",
+        content = "Content $id",
+        folderId = null,
+        tagIds = emptyList(),
+        permission = NotePermission.WRITE,
+        createdAt = 0L,
+        updatedAt = updatedAt,
+    )
 
-    private fun dto(id: String, updatedAt: Long = 0L) =
-        NoteDto(id, "Title $id", "Content $id", null, 0L, updatedAt)
+    private fun dto(id: String, updatedAt: Long = 0L) = NoteDto(
+        id = id,
+        title = "Title $id",
+        content = "Content $id",
+        folderId = null,
+        tagIds = emptyList(),
+        permission = NotePermission.WRITE,
+        createdAt = 0L,
+        updatedAt = updatedAt
+    )
 
     // ─── pullAll tests ────────────────────────────────────────────────────────
 
@@ -269,20 +372,41 @@ class SyncObserverTest {
                 title: String,
                 content: String,
                 folderId: String?,
+                tagIds: List<String>,
                 createdAt: Long,
                 updatedAt: Long,
-            ) = NoteDto(id, title, content, folderId, createdAt, updatedAt)
+            ) = NoteDto(
+                id = id,
+                title = title,
+                content = content,
+                folderId = folderId,
+                tagIds = tagIds,
+                permission = NotePermission.WRITE,
+                createdAt = createdAt,
+                updatedAt = updatedAt
+            )
 
             override suspend fun update(
                 id: String,
                 title: String,
                 content: String,
                 folderId: String?,
+                tagIds: List<String>,
                 updatedAt: Long,
-            ) = NoteDto(id, title, content, folderId, 0L, updatedAt)
+            ) = NoteDto(
+                id = id,
+                title = title,
+                content = content,
+                folderId = folderId,
+                tagIds = tagIds,
+                permission = NotePermission.WRITE,
+                createdAt = 0L,
+                updatedAt = updatedAt
+            )
 
             override suspend fun delete(id: String) {}
         }
+
         val userCenter = FakeUserCenter(UserState.Authorized)
 
         val observer = observer(notesRepo, apiService, userCenter, backgroundScope)

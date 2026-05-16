@@ -47,6 +47,10 @@ sealed class BottomSheet : OverlayDestination() {
     ) : BottomSheet() {
         enum class Mode { Create, Edit }
     }
+
+    data class ShareNote(
+        val noteId: String,
+    ) : BottomSheet()
 }
 
 @Immutable

@@ -17,15 +17,18 @@ import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.UserIdPrincipal
 import io.ktor.server.auth.bearer
-import io.ktor.server.plugins.contentnegotiation.ContentNegotiation as ServerContentNegotiation
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
-import ru.glyph.server.database.NotesRepository
+import ru.glyph.server.database.Folders
+import ru.glyph.server.database.NoteShares
+import ru.glyph.server.database.NoteTags
 import ru.glyph.server.database.Notes
+import ru.glyph.server.database.NotesRepository
+import ru.glyph.server.database.Tags
 import ru.glyph.server.database.Users
 import ru.glyph.server.model.CreateNoteRequest
 import ru.glyph.server.model.NoteDto
@@ -34,7 +37,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation as ServerContentNegotiation
 
 class NotesRoutesTest {
 
@@ -46,12 +49,12 @@ class NotesRoutesTest {
             url = "jdbc:h2:mem:routestest;DB_CLOSE_DELAY=-1",
             driver = "org.h2.Driver",
         )
-        transaction { SchemaUtils.create(Users, Notes) }
+        transaction { SchemaUtils.create(Users, Folders, Notes, Tags, NoteTags, NoteShares) }
     }
 
     @AfterTest
     fun tearDown() {
-        transaction { SchemaUtils.drop(Notes, Users) }
+        transaction { SchemaUtils.drop(NoteShares, NoteTags, Tags, Notes, Folders, Users) }
     }
 
     // ─── Test application setup ───────────────────────────────────────────────
@@ -78,14 +81,6 @@ class NotesRoutesTest {
             }
         }
         routing { notesRoutes() }
-    }
-
-    private fun buildClient() = testApplication {
-        application { testModule() }
-        val client = createClient {
-            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-        }
-        client
     }
 
     /** Helper to add X-Auth-Token header to every request. */
@@ -140,12 +135,12 @@ class NotesRoutesTest {
         client.post("/api/v1/notes") {
             auth()
             contentType(ContentType.Application.Json)
-            setBody(CreateNoteRequest("n1", "T1", "C1", 1L, 1L))
+            setBody(CreateNoteRequest("n1", "T1", "C1", null, emptyList(), 1L, 1L))
         }
         client.post("/api/v1/notes") {
             auth()
             contentType(ContentType.Application.Json)
-            setBody(CreateNoteRequest("n2", "T2", "C2", 2L, 2L))
+            setBody(CreateNoteRequest("n2", "T2", "C2", null, emptyList(), 2L, 2L))
         }
 
         val response = client.get("/api/v1/notes") { auth() }
@@ -163,7 +158,7 @@ class NotesRoutesTest {
         client.post("/api/v1/notes") {
             auth()
             contentType(ContentType.Application.Json)
-            setBody(CreateNoteRequest("n1", "Title", "Content", 1L, 1L))
+            setBody(CreateNoteRequest("n1", "Title", "Content", null, emptyList(), 1L, 1L))
         }
 
         val response = client.get("/api/v1/notes/n1") { auth() }
@@ -192,7 +187,7 @@ class NotesRoutesTest {
         client.post("/api/v1/notes") {
             auth(testUser)
             contentType(ContentType.Application.Json)
-            setBody(CreateNoteRequest("n1", "T", "C", 1L, 1L))
+            setBody(CreateNoteRequest("n1", "T", "C", null, emptyList(), 1L, 1L))
         }
 
         // Try to read as different user
@@ -209,13 +204,13 @@ class NotesRoutesTest {
         client.post("/api/v1/notes") {
             auth()
             contentType(ContentType.Application.Json)
-            setBody(CreateNoteRequest("n1", "Old Title", "Old Content", 1L, 1L))
+            setBody(CreateNoteRequest("n1", "Old Title", "Old Content", null, emptyList(), 1L, 1L))
         }
 
         val response = client.put("/api/v1/notes/n1") {
             auth()
             contentType(ContentType.Application.Json)
-            setBody(UpdateNoteRequest("New Title", "New Content", 9999L))
+            setBody(UpdateNoteRequest("New Title", "New Content", null, emptyList(), 9999L))
         }
 
         assertEquals(HttpStatusCode.OK, response.status)
@@ -233,13 +228,13 @@ class NotesRoutesTest {
         client.post("/api/v1/notes") {
             auth(testUser)
             contentType(ContentType.Application.Json)
-            setBody(CreateNoteRequest("n1", "T", "C", 1L, 1L))
+            setBody(CreateNoteRequest("n1", "T", "C", null, emptyList(), 1L, 1L))
         }
 
         val response = client.put("/api/v1/notes/n1") {
             auth("other-user")
             contentType(ContentType.Application.Json)
-            setBody(UpdateNoteRequest("X", "X", 1L))
+            setBody(UpdateNoteRequest("X", "X", null, emptyList(), 1L))
         }
 
         assertEquals(HttpStatusCode.NotFound, response.status)
@@ -253,7 +248,7 @@ class NotesRoutesTest {
         client.post("/api/v1/notes") {
             auth()
             contentType(ContentType.Application.Json)
-            setBody(CreateNoteRequest("n1", "T", "C", 1L, 1L))
+            setBody(CreateNoteRequest("n1", "T", "C", null, emptyList(), 1L, 1L))
         }
 
         val response = client.delete("/api/v1/notes/n1") { auth() }

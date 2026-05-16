@@ -39,7 +39,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mikepenz.markdown.m3.Markdown
 import com.mikepenz.markdown.m3.markdownColor
-import com.mikepenz.markdown.m3.markdownTypography
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import ru.glyph.design.Res
@@ -54,6 +53,7 @@ import ru.glyph.design.ic_format_code
 import ru.glyph.design.ic_format_heading
 import ru.glyph.design.ic_format_italic
 import ru.glyph.design.ic_format_list
+import ru.glyph.design.ic_share
 import ru.glyph.design.ic_visibility
 import ru.glyph.design.padding.localPaddingValues
 import ru.glyph.design.theme.GlyphShape
@@ -76,6 +76,7 @@ import ru.glyph.string.resources.note_edit_cd
 import ru.glyph.string.resources.note_folder_chip_cd
 import ru.glyph.string.resources.note_placeholder
 import ru.glyph.string.resources.note_preview_cd
+import ru.glyph.string.resources.note_share_cd
 import ru.glyph.string.resources.note_title_placeholder
 import ru.glyph.string.resources.Res as StringRes
 
@@ -101,6 +102,7 @@ internal fun NoteScreen(
             onMoveClick = viewModel::onMoveClick,
             onTagsClick = viewModel::onTagsClick,
             onBackClick = viewModel::onBackClick,
+            onShareClick = viewModel::onShareClick,
             modifier = modifier,
         )
     }
@@ -118,6 +120,7 @@ internal fun NoteScreenContent(
     onMoveClick: () -> Unit,
     onTagsClick: () -> Unit,
     onBackClick: () -> Unit,
+    onShareClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var textFieldContent by remember {
@@ -137,9 +140,12 @@ internal fun NoteScreenContent(
         NoteTopBar(
             title = state.title,
             isPreviewMode = state.isPreviewMode,
+            isReadOnly = state.isReadOnly,
+            isOwner = state.isOwner,
             onBackClick = onBackClick,
             onTogglePreview = onTogglePreview,
             onDeleteClick = onDeleteClick,
+            onShareClick = onShareClick,
         )
 
         FolderChip(
@@ -207,9 +213,12 @@ internal fun NoteScreenContent(
 private fun NoteTopBar(
     title: String,
     isPreviewMode: Boolean,
+    isReadOnly: Boolean,
+    isOwner: Boolean,
     onBackClick: () -> Unit,
     onTogglePreview: () -> Unit,
     onDeleteClick: () -> Unit,
+    onShareClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -243,17 +252,30 @@ private fun NoteTopBar(
                 .padding(horizontal = 8.dp),
         )
 
-        IconButton(onClick = onTogglePreview) {
-            Icon(
-                painter = painterResource(
-                    if (isPreviewMode) Res.drawable.ic_edit else Res.drawable.ic_visibility,
-                ),
-                contentDescription = stringResource(
-                    if (isPreviewMode) StringRes.string.note_edit_cd else StringRes.string.note_preview_cd,
-                ),
-                tint = GlyphTheme.colors.textPrimary,
-                modifier = Modifier.size(20.dp),
-            )
+        if (isOwner) {
+            IconButton(onClick = onShareClick) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_share),
+                    contentDescription = stringResource(StringRes.string.note_share_cd),
+                    tint = GlyphTheme.colors.textPrimary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
+
+        if (!isReadOnly) {
+            IconButton(onClick = onTogglePreview) {
+                Icon(
+                    painter = painterResource(
+                        if (isPreviewMode) Res.drawable.ic_edit else Res.drawable.ic_visibility,
+                    ),
+                    contentDescription = stringResource(
+                        if (isPreviewMode) StringRes.string.note_edit_cd else StringRes.string.note_preview_cd,
+                    ),
+                    tint = GlyphTheme.colors.textPrimary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
 
         IconButton(onClick = onDeleteClick) {

@@ -5,6 +5,7 @@ data class Folder(
     val name: String,
     val color: FolderColor,
     val parentFolderId: String?,
+    val permission: FolderPermission,
     val createdAt: Long,
     val updatedAt: Long,
 )

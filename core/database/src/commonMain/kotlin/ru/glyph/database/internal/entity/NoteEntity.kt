@@ -10,6 +10,7 @@ internal data class NoteEntity(
     val content: String,
     val folderId: String?,
     val tagIds: List<String>,
+    val permission: String,
     val createdAt: Long,
     val updatedAt: Long,
 )

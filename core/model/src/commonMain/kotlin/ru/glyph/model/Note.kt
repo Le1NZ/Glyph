@@ -6,6 +6,7 @@ data class Note(
     val content: String,
     val folderId: String?,
     val tagIds: List<String>,
+    val permission: NotePermission,
     val createdAt: Long,
     val updatedAt: Long,
 )

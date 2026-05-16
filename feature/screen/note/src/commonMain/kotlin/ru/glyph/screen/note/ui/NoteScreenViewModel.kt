@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -20,7 +21,9 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import ru.glyph.database.api.FoldersRepository
 import ru.glyph.database.api.NotesRepository
+import ru.glyph.database.api.TagsRepository
 import ru.glyph.model.Folder
+import ru.glyph.model.NotePermission
 import ru.glyph.model.Tag
 import ru.glyph.navigation.api.Navigator
 import ru.glyph.navigation.api.model.BottomSheet
@@ -35,8 +38,8 @@ internal class NoteScreenViewModel(
     private val noteId: String,
     private val notesRepository: NotesRepository,
     private val foldersRepository: FoldersRepository,
-    private val tagsRepository: ru.glyph.database.api.TagsRepository,
     private val navigator: Navigator,
+    tagsRepository: TagsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<NoteUiState>(NoteUiState.Loading)
@@ -64,35 +67,45 @@ internal class NoteScreenViewModel(
             val note = notesRepository.getById(noteId)
             _currentFolderId.value = note?.folderId
             _currentTagIds.value = note?.tagIds ?: emptyList()
+            
+        val isReadOnly = note?.permission == NotePermission.READ
+        val isOwner = note?.permission == NotePermission.WRITE
+            
             _uiState.value = NoteUiState.Editing(
                 title = note?.title ?: "",
                 content = note?.content ?: "",
-                isPreviewMode = false,
+                isPreviewMode = isReadOnly,
+                isReadOnly = isReadOnly,
+                isOwner = isOwner,
             )
         }
 
         uiState
             .filterIsInstance<NoteUiState.Editing>()
-            .map { it.title to it.content }
+            .filter { !it.isReadOnly }
+            .map { Pair(it.title, it.content) }
             .distinctUntilChanged()
             .debounce(1.seconds)
-            .collectIn(viewModelScope) { (title, content) ->
-                notesRepository.update(noteId, title, content)
+            .collectIn(viewModelScope) { pair ->
+                notesRepository.update(noteId, pair.first, pair.second)
             }
     }
 
     fun onTitleChange(title: String) {
         val current = _uiState.value as? NoteUiState.Editing ?: return
+        if (current.isReadOnly) return
         _uiState.value = current.copy(title = title)
     }
 
     fun onContentChange(content: String) {
         val current = _uiState.value as? NoteUiState.Editing ?: return
+        if (current.isReadOnly) return
         _uiState.value = current.copy(content = content)
     }
 
     fun onTogglePreview() {
         val current = _uiState.value as? NoteUiState.Editing ?: return
+        if (current.isReadOnly) return
         _uiState.value = current.copy(isPreviewMode = !current.isPreviewMode)
     }
 
@@ -143,6 +156,10 @@ internal class NoteScreenViewModel(
         )
     }
 
+    fun onShareClick() {
+        navigator.showOverlay(BottomSheet.ShareNote(noteId))
+    }
+
     fun onBackClick() {
         navigator.popBackStack()
     }
@@ -150,6 +167,7 @@ internal class NoteScreenViewModel(
     private suspend fun updateToActual(
         state: NoteUiState.Editing,
     ) {
+        if (state.isReadOnly) return
         notesRepository.update(
             id = noteId,
             title = state.title,

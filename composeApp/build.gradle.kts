@@ -60,7 +60,8 @@ kotlin {
             implementation(projects.feature.screen.folder)
             implementation(projects.feature.confirmBottomSheet)
             implementation(projects.feature.folderBottomSheets)
-            implementation(projects.feature.tagBottomSheets)
+                implementation(projects.feature.tagBottomSheets)
+                implementation(projects.feature.shareBottomSheet)
             implementation(projects.core.database)
             implementation(projects.core.sync)
         }

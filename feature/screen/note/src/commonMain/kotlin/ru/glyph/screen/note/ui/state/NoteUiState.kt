@@ -11,5 +11,7 @@ internal sealed interface NoteUiState {
         val title: String,
         val content: String,
         val isPreviewMode: Boolean,
+        val isReadOnly: Boolean,
+        val isOwner: Boolean,
     ) : NoteUiState
 }

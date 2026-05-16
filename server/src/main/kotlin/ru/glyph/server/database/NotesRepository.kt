@@ -10,29 +10,73 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import org.jetbrains.exposed.sql.update
 import ru.glyph.server.model.CreateNoteRequest
 import ru.glyph.server.model.NoteDto
+import ru.glyph.server.model.NoteShareDto
 import ru.glyph.server.model.UpdateNoteRequest
+
+import ru.glyph.server.model.NotePermission
+import ru.glyph.server.model.SharedFolderConstants
 
 object NotesRepository {
 
     suspend fun getAll(userId: String): List<NoteDto> = query {
-        val notes = Notes.selectAll()
+        val userEmail = Users.selectAll().where { Users.yandexId eq userId }.firstOrNull()?.get(Users.email)
+
+        // Get owned notes
+        val ownedNotes = Notes.selectAll()
             .where { Notes.userYandexId eq userId }
-            .orderBy(Notes.updatedAt)
             .toList()
-            
-        val noteIds = notes.map { it[Notes.id] }
+
+        // Get shared notes if user has email
+        val sharedNotes = if (userEmail != null) {
+            (Notes innerJoin NoteShares).selectAll()
+                .where { NoteShares.email eq userEmail }
+                .toList()
+        } else {
+            emptyList()
+        }
+
+        val allNotes = ownedNotes + sharedNotes
+        val noteIds = allNotes.map { it[Notes.id] }.distinct()
         val tagsMap = getTagsForNotes(noteIds)
+
+        val result = mutableListOf<NoteDto>()
         
-        notes.map { it.toDto(tagsMap[it[Notes.id]] ?: emptyList()) }
+        ownedNotes.forEach { row ->
+            result.add(row.toDto(tagsMap[row[Notes.id]] ?: emptyList(), permission = NotePermission.WRITE.name))
+        }
+        
+        sharedNotes.forEach { row ->
+            val dto = row.toDto(tagsMap[row[Notes.id]] ?: emptyList(), permission = row[NoteShares.permission])
+            result.add(dto.copy(folderId = SharedFolderConstants.ID))
+        }
+
+        result.sortedBy { it.updatedAt }
     }
 
     suspend fun getById(id: String, userId: String): NoteDto? = query {
-        val row = Notes.selectAll()
+        val userEmail = Users.selectAll().where { Users.yandexId eq userId }.firstOrNull()?.get(Users.email)
+
+        val ownedRow = Notes.selectAll()
             .where { (Notes.id eq id) and (Notes.userYandexId eq userId) }
-            .firstOrNull() ?: return@query null
+            .firstOrNull()
+
+        if (ownedRow != null) {
+            val tags = getTagsForNotes(listOf(id))[id] ?: emptyList()
+            return@query ownedRow.toDto(tags, permission = NotePermission.WRITE.name)
+        }
+
+        if (userEmail != null) {
+            val sharedRow = (Notes innerJoin NoteShares).selectAll()
+                .where { (Notes.id eq id) and (NoteShares.email eq userEmail) }
+                .firstOrNull()
             
-        val tags = getTagsForNotes(listOf(id))[id] ?: emptyList()
-        row.toDto(tags)
+            if (sharedRow != null) {
+                val tags = getTagsForNotes(listOf(id))[id] ?: emptyList()
+                return@query sharedRow.toDto(tags, permission = sharedRow[NoteShares.permission]).copy(folderId = SharedFolderConstants.ID)
+            }
+        }
+        
+        null
     }
 
     suspend fun create(userId: String, request: CreateNoteRequest): NoteDto = query {
@@ -51,42 +95,148 @@ object NotesRepository {
         Notes.selectAll()
             .where { Notes.id eq request.id }
             .first()
-            .toDto(request.tagIds)
+            .toDto(request.tagIds, permission = NotePermission.WRITE.name)
     }
 
     suspend fun update(id: String, userId: String, request: UpdateNoteRequest): NoteDto? = query {
-        val existing = Notes.selectAll()
+        val userEmail = Users.selectAll().where { Users.yandexId eq userId }.firstOrNull()?.get(Users.email)
+
+        val existingOwned = Notes.selectAll()
             .where { (Notes.id eq id) and (Notes.userYandexId eq userId) }
             .firstOrNull()
-            ?: return@query null
+
+        val existingShared = if (existingOwned == null && userEmail != null) {
+            (Notes innerJoin NoteShares).selectAll()
+                .where { (Notes.id eq id) and (NoteShares.email eq userEmail) }
+                .firstOrNull()
+        } else {
+            null
+        }
+
+        val existing = existingOwned ?: existingShared ?: return@query null
+        val permission = existingShared?.get(NoteShares.permission) ?: NotePermission.WRITE.name
+
+        if (permission == NotePermission.READ.name) {
+            return@query null // Cannot update if only READ access
+        }
 
         if (request.updatedAt < existing[Notes.updatedAt]) {
             val tags = getTagsForNotes(listOf(id))[id] ?: emptyList()
-            return@query existing.toDto(tags)
+            val dto = existing.toDto(tags, permission)
+            return@query if (existingShared != null) dto.copy(folderId = SharedFolderConstants.ID) else dto
         }
 
         Notes.update(
-            where = { (Notes.id eq id) and (Notes.userYandexId eq userId) }
+            where = { Notes.id eq id }
         ) {
             it[title] = request.title
             it[content] = request.content
-            it[folderId] = request.folderId
+            // Only owner can change folder
+            if (existingOwned != null) {
+                it[folderId] = request.folderId
+            }
             it[updatedAt] = request.updatedAt
         }
         
         updateNoteTags(id, request.tagIds)
         
-        Notes.selectAll().where { Notes.id eq id }.firstOrNull()?.toDto(request.tagIds)
+        val dto = Notes.selectAll().where { Notes.id eq id }.firstOrNull()?.toDto(request.tagIds, permission)
+        return@query if (existingShared != null) dto?.copy(folderId = SharedFolderConstants.ID) else dto
     }
 
     suspend fun delete(id: String, userId: String): Boolean = query {
-        Notes.deleteWhere { (Notes.id eq id) and (Notes.userYandexId eq userId) } > 0
+        val userEmail = Users.selectAll().where { Users.yandexId eq userId }.firstOrNull()?.get(Users.email)
+
+        // If owner, delete the note
+        val deletedNote = Notes.deleteWhere { (Notes.id eq id) and (Notes.userYandexId eq userId) } > 0
+        if (deletedNote) return@query true
+
+        // If shared, just remove the share
+        if (userEmail != null) {
+            return@query NoteShares.deleteWhere { (NoteShares.noteId eq id) and (NoteShares.email eq userEmail) } > 0
+        }
+
+        false
     }
 
-    suspend fun ensureUser(yandexId: String) = query {
-        val exists = Users.selectAll().where { Users.yandexId eq yandexId }.count() > 0
-        if (!exists) {
-            Users.insert { it[Users.yandexId] = yandexId }
+    suspend fun getShares(noteId: String, userId: String): List<NoteShareDto>? = query {
+        // Check if user owns the note
+        val isOwner = Notes.selectAll()
+            .where { (Notes.id eq noteId) and (Notes.userYandexId eq userId) }
+            .count() > 0
+            
+        if (!isOwner) return@query null
+
+        NoteShares.selectAll()
+            .where { NoteShares.noteId eq noteId }
+            .map { NoteShareDto(it[NoteShares.email], NotePermission.valueOf(it[NoteShares.permission])) }
+    }
+
+    suspend fun addShare(noteId: String, userId: String, email: String, permission: NotePermission): NoteShareDto? = query {
+        val isOwner = Notes.selectAll()
+            .where { (Notes.id eq noteId) and (Notes.userYandexId eq userId) }
+            .count() > 0
+            
+        if (!isOwner) return@query null
+
+        // Don't allow sharing with yourself if we know the owner's email
+        val ownerEmail = Users.selectAll().where { Users.yandexId eq userId }.firstOrNull()?.get(Users.email)
+        if (ownerEmail == email) return@query null
+
+        val existing = NoteShares.selectAll()
+            .where { (NoteShares.noteId eq noteId) and (NoteShares.email eq email) }
+            .firstOrNull()
+
+        if (existing == null) {
+            NoteShares.insert {
+                it[NoteShares.noteId] = noteId
+                it[NoteShares.email] = email
+                it[NoteShares.permission] = permission.name
+            }
+        } else {
+            NoteShares.update({ (NoteShares.noteId eq noteId) and (NoteShares.email eq email) }) {
+                it[NoteShares.permission] = permission.name
+            }
+        }
+
+        NoteShareDto(email, permission)
+    }
+
+    suspend fun updateShare(noteId: String, userId: String, email: String, permission: NotePermission): NoteShareDto? = query {
+        val isOwner = Notes.selectAll()
+            .where { (Notes.id eq noteId) and (Notes.userYandexId eq userId) }
+            .count() > 0
+            
+        if (!isOwner) return@query null
+
+        val updated = NoteShares.update({ (NoteShares.noteId eq noteId) and (NoteShares.email eq email) }) {
+            it[NoteShares.permission] = permission.name
+        } > 0
+
+        if (updated) NoteShareDto(email, permission) else null
+    }
+
+    suspend fun removeShare(noteId: String, userId: String, email: String): Boolean = query {
+        val isOwner = Notes.selectAll()
+            .where { (Notes.id eq noteId) and (Notes.userYandexId eq userId) }
+            .count() > 0
+            
+        if (!isOwner) return@query false
+
+        NoteShares.deleteWhere { (NoteShares.noteId eq noteId) and (NoteShares.email eq email) } > 0
+    }
+
+    suspend fun ensureUser(yandexId: String, email: String? = null) = query {
+        val existing = Users.selectAll().where { Users.yandexId eq yandexId }.firstOrNull()
+        if (existing == null) {
+            Users.insert { 
+                it[Users.yandexId] = yandexId 
+                it[Users.email] = email
+            }
+        } else if (email != null && existing[Users.email] != email) {
+            Users.update({ Users.yandexId eq yandexId }) {
+                it[Users.email] = email
+            }
         }
     }
 
@@ -117,12 +267,13 @@ object NotesRepository {
     private suspend fun <T> query(block: () -> T): T =
         newSuspendedTransaction { block() }
 
-    private fun ResultRow.toDto(tagIds: List<String>) = NoteDto(
+    private fun ResultRow.toDto(tagIds: List<String>, permission: String) = NoteDto(
         id = this[Notes.id],
         title = this[Notes.title],
         content = this[Notes.content],
         folderId = this[Notes.folderId],
         tagIds = tagIds,
+        permission = NotePermission.valueOf(permission),
         createdAt = this[Notes.createdAt],
         updatedAt = this[Notes.updatedAt],
     )

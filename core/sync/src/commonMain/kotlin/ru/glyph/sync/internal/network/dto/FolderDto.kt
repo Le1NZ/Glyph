@@ -2,6 +2,7 @@ package ru.glyph.sync.internal.network.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import ru.glyph.model.FolderPermission
 
 @Serializable
 internal data class FolderDto(
@@ -9,6 +10,7 @@ internal data class FolderDto(
     @SerialName("name") val name: String,
     @SerialName("color") val color: String,
     @SerialName("parent_folder_id") val parentFolderId: String? = null,
+    @SerialName("permission") val permission: FolderPermission,
     @SerialName("created_at") val createdAt: Long,
     @SerialName("updated_at") val updatedAt: Long,
 )

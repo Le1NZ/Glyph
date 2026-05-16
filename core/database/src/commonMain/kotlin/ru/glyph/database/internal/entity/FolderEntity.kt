@@ -9,6 +9,7 @@ internal data class FolderEntity(
     val name: String,
     val color: String,
     val parentFolderId: String?,
+    val permission: String,
     val createdAt: Long,
     val updatedAt: Long,
 )

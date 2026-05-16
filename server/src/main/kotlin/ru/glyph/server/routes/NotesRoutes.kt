@@ -59,6 +59,49 @@ fun Route.notesRoutes() {
                 if (deleted) call.respond(HttpStatusCode.NoContent)
                 else call.respond(HttpStatusCode.NotFound)
             }
+
+            // Share routes
+            get("{id}/shares") {
+                val userId = call.principal<UserIdPrincipal>()!!.name
+                val id = call.parameters["id"]
+                    ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing id")
+                val shares = NotesRepository.getShares(id, userId)
+                    ?: return@get call.respond(HttpStatusCode.Forbidden, "Not owner")
+                call.respond(shares)
+            }
+
+            post("{id}/shares") {
+                val userId = call.principal<UserIdPrincipal>()!!.name
+                val id = call.parameters["id"]
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing id")
+                val request = call.receive<ru.glyph.server.model.ShareNoteRequest>()
+                val share = NotesRepository.addShare(id, userId, request.email, request.permission)
+                    ?: return@post call.respond(HttpStatusCode.Forbidden, "Not owner or invalid request")
+                call.respond(HttpStatusCode.Created, share)
+            }
+
+            put("{id}/shares/{email}") {
+                val userId = call.principal<UserIdPrincipal>()!!.name
+                val id = call.parameters["id"]
+                    ?: return@put call.respond(HttpStatusCode.BadRequest, "Missing id")
+                val email = call.parameters["email"]
+                    ?: return@put call.respond(HttpStatusCode.BadRequest, "Missing email")
+                val request = call.receive<ru.glyph.server.model.ShareNoteRequest>()
+                val share = NotesRepository.updateShare(id, userId, email, request.permission)
+                    ?: return@put call.respond(HttpStatusCode.Forbidden, "Not owner or share not found")
+                call.respond(share)
+            }
+
+            delete("{id}/shares/{email}") {
+                val userId = call.principal<UserIdPrincipal>()!!.name
+                val id = call.parameters["id"]
+                    ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing id")
+                val email = call.parameters["email"]
+                    ?: return@delete call.respond(HttpStatusCode.BadRequest, "Missing email")
+                val deleted = NotesRepository.removeShare(id, userId, email)
+                if (deleted) call.respond(HttpStatusCode.NoContent)
+                else call.respond(HttpStatusCode.Forbidden, "Not owner or share not found")
+            }
         }
     }
 }

@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -15,13 +14,14 @@ import ru.glyph.design.components.FolderCardUiModel
 import ru.glyph.design.components.NoteCardUiModel
 import ru.glyph.design.theme.toGlyphColor
 import ru.glyph.model.Folder
+import ru.glyph.model.FolderPermission
 import ru.glyph.model.Note
 import ru.glyph.navigation.api.Navigator
 import ru.glyph.navigation.api.model.BottomSheet
 import ru.glyph.navigation.api.model.Screen
 import ru.glyph.screen.folder.ui.composable.model.FolderScreenUiState
-import ru.glyph.string.resources.Res as StringRes
 import ru.glyph.string.resources.folder_delete_confirmation
+import ru.glyph.string.resources.Res as StringRes
 
 internal class FolderScreenViewModel(
     private val folderId: String,
@@ -48,6 +48,7 @@ internal class FolderScreenViewModel(
             subfolders = subfolders.map { it.toUiModel(noteCount = noteCounts[it.id] ?: 0) },
             notes = notes.map { it.toUiModel() },
             isReady = true,
+            isReadOnly = current.permission == FolderPermission.READ,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -68,6 +69,7 @@ internal class FolderScreenViewModel(
     }
 
     fun onCreateNoteClick() {
+        if (state.value.isReadOnly) return
         viewModelScope.launch {
             val id = notesRepository.create(folderId = folderId)
             navigator.navigateTo(Screen.Note(id))
@@ -75,6 +77,7 @@ internal class FolderScreenViewModel(
     }
 
     fun onCreateSubfolderClick() {
+        if (state.value.isReadOnly) return
         navigator.showOverlay(
             overlay = BottomSheet.FolderForm(
                 mode = BottomSheet.FolderForm.Mode.Create,
@@ -88,6 +91,7 @@ internal class FolderScreenViewModel(
     }
 
     fun onCurrentFolderActionsClick() {
+        if (state.value.isReadOnly) return
         viewModelScope.launch {
             val folder = foldersRepository.getById(folderId) ?: return@launch
             showActions(folder)

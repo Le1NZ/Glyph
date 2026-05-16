@@ -12,6 +12,8 @@ import ru.glyph.utils.clock.currentTimeDuration
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+import ru.glyph.model.NotePermission
+
 @OptIn(ExperimentalUuidApi::class)
 internal class NotesRepositoryImpl(
     private val dao: NoteDao,
@@ -63,6 +65,7 @@ internal class NotesRepositoryImpl(
             content = content,
             folderId = folderId,
             tagIds = emptyList(),
+            permission = NotePermission.WRITE.name,
             createdAt = now,
             updatedAt = now,
         )

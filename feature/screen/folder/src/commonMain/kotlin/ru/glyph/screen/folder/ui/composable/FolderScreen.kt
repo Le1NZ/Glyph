@@ -77,7 +77,7 @@ internal fun FolderScreenContent(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             FolderTopBar(
-                title = state.folderName,
+                state = state,
                 onBackClick = presenter::onBackClick,
                 onActionsClick = presenter::onCurrentFolderActionsClick,
             )
@@ -88,20 +88,24 @@ internal fun FolderScreenContent(
             )
         }
 
-        FloatingActionButton(
-            onClick = presenter::onCreateNoteClick,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 20.dp, bottom = 20.dp + localPaddingValues.calculateBottomPadding()),
-            containerColor = GlyphTheme.colors.fabBackground,
-            contentColor = GlyphTheme.colors.fabContent,
-            shape = GlyphShape.button,
-        ) {
-            Icon(
-                painter = painterResource(Res.drawable.ic_add),
-                contentDescription = stringResource(StringRes.string.home_create_note_cd),
-                modifier = Modifier.size(24.dp),
-            )
+        val isSharedFolder = state.isReadOnly
+        
+        if (!isSharedFolder) {
+            FloatingActionButton(
+                onClick = presenter::onCreateNoteClick,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 20.dp, bottom = 20.dp + localPaddingValues.calculateBottomPadding()),
+                containerColor = GlyphTheme.colors.fabBackground,
+                contentColor = GlyphTheme.colors.fabContent,
+                shape = GlyphShape.button,
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_add),
+                    contentDescription = stringResource(StringRes.string.home_create_note_cd),
+                    modifier = Modifier.size(24.dp),
+                )
+            }
         }
     }
 }
@@ -122,32 +126,36 @@ private fun FolderBody(
             bottom = maxOf(24.dp, localPaddingValues.calculateBottomPadding()) + 72.dp,
         ),
     ) {
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = stringResource(StringRes.string.home_folders_section),
-                    style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
-                )
-                CreateSubfolderButton(onClick = presenter::onCreateSubfolderClick)
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
-        if (state.subfolders.isNotEmpty()) {
+        val isSharedFolder = state.isReadOnly
+        
+        if (!isSharedFolder) {
             item {
-                FoldersGrid(
-                    folders = state.subfolders,
-                    onFolderClick = presenter::onSubfolderClick,
-                    onFolderActionsClick = presenter::onSubfolderActionsClick,
-                )
-                Spacer(modifier = Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(StringRes.string.home_folders_section),
+                        style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
+                    )
+                    CreateSubfolderButton(onClick = presenter::onCreateSubfolderClick)
+                }
+                Spacer(modifier = Modifier.height(12.dp))
             }
-        } else {
-            item { Spacer(modifier = Modifier.height(8.dp)) }
+
+            if (state.subfolders.isNotEmpty()) {
+                item {
+                    FoldersGrid(
+                        folders = state.subfolders,
+                        onFolderClick = presenter::onSubfolderClick,
+                        onFolderActionsClick = presenter::onSubfolderActionsClick,
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+            } else {
+                item { Spacer(modifier = Modifier.height(8.dp)) }
+            }
         }
 
         item {
@@ -176,7 +184,7 @@ private fun FolderBody(
 
 @Composable
 private fun FolderTopBar(
-    title: String,
+    state: ru.glyph.screen.folder.ui.composable.model.FolderScreenUiState,
     onBackClick: () -> Unit,
     onActionsClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -198,7 +206,7 @@ private fun FolderTopBar(
         }
 
         Text(
-            text = title,
+            text = state.folderName,
             style = GlyphTheme.typography.heading2.copy(color = GlyphTheme.colors.textPrimary),
             maxLines = 1,
             modifier = Modifier
@@ -206,17 +214,21 @@ private fun FolderTopBar(
                 .padding(horizontal = 8.dp),
         )
 
-        val actionsLabel = stringResource(StringRes.string.folder_actions_cd)
-        IconButton(
-            onClick = onActionsClick,
-            modifier = Modifier.semantics { contentDescription = actionsLabel },
-        ) {
-            Icon(
-                painter = painterResource(Res.drawable.ic_more_horiz),
-                contentDescription = null,
-                tint = GlyphTheme.colors.textPrimary,
-                modifier = Modifier.size(20.dp),
-            )
+        val isSharedFolder = state.isReadOnly
+        
+        if (!isSharedFolder) {
+            val actionsLabel = stringResource(StringRes.string.folder_actions_cd)
+            IconButton(
+                onClick = onActionsClick,
+                modifier = Modifier.semantics { contentDescription = actionsLabel },
+            ) {
+                Icon(
+                    painter = painterResource(Res.drawable.ic_more_horiz),
+                    contentDescription = null,
+                    tint = GlyphTheme.colors.textPrimary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
     }
 }

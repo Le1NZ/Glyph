@@ -28,12 +28,14 @@ import ru.glyph.string.resources.Res as StringRes
 import ru.glyph.string.resources.folder_delete_confirmation
 import ru.glyph.sync.api.SyncBootstrap
 
+import ru.glyph.model.FolderPermission
+
 internal class HomeScreenViewModel(
     private val navigator: Navigator,
     private val notesRepository: NotesRepository,
     private val foldersRepository: FoldersRepository,
-    private val tagsRepository: TagsRepository,
     private val syncBootstrap: SyncBootstrap,
+    tagsRepository: TagsRepository,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -153,6 +155,7 @@ internal class HomeScreenViewModel(
     fun onFolderActionsClick(id: String) {
         viewModelScope.launch {
             val folder = foldersRepository.getById(id) ?: return@launch
+            if (folder.permission == FolderPermission.READ) return@launch
             navigator.showOverlay(
                 overlay = BottomSheet.FolderActions(
                     folder = folder,

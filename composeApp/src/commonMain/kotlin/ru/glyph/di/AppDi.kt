@@ -18,6 +18,7 @@ import ru.glyph.screen.note.api.di.NoteScreenLocalDi
 import ru.glyph.screen.profile.api.di.ProfileScreenDi
 import ru.glyph.sync.api.di.SyncLocalDi
 import ru.glyph.tag_bottom_sheets.di.TagBottomSheetsLocalDi
+import ru.glyph.share_bottom_sheet.di.ShareBottomSheetLocalDi
 
 internal object AppDi {
 
@@ -42,5 +43,6 @@ internal object AppDi {
         ConfirmBottomSheetLocalDi.module,
         FolderBottomSheetsLocalDi.module,
         TagBottomSheetsLocalDi.module,
+        ShareBottomSheetLocalDi.module,
     )
 }

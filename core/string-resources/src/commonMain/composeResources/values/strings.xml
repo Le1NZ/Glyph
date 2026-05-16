@@ -22,6 +22,7 @@
     <string name="note_placeholder">Начни писать…</string>
     <string name="note_untitled">Новая заметка</string>
     <string name="note_delete_cd">Удалить заметку</string>
+    <string name="note_share_cd">Поделиться заметкой</string>
     <string name="note_preview_cd">Предпросмотр</string>
     <string name="note_edit_cd">Редактировать</string>
     <string name="note_back_cd">Назад</string>
@@ -88,4 +89,14 @@
     <string name="tag_form_save">Сохранить</string>
     <string name="tag_form_color">Цвет</string>
     <string name="note_add_tags">Добавить теги</string>
+    
+    <!-- Share bottom sheet -->
+    <string name="share_bottom_sheet_title">Поделиться заметкой</string>
+    <string name="share_bottom_sheet_email_placeholder">Email пользователя</string>
+    <string name="share_bottom_sheet_add_button">Добавить</string>
+    <string name="share_bottom_sheet_empty_state">Вы еще не делились этой заметкой</string>
+    <string name="share_bottom_sheet_permission_read">Чтение</string>
+    <string name="share_bottom_sheet_permission_write">Редактирование</string>
+    <string name="share_bottom_sheet_delete_cd">Удалить</string>
+    <string name="share_bottom_sheet_error">Ошибка</string>
 </resources>

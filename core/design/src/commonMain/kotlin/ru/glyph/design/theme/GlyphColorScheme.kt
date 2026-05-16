@@ -41,4 +41,5 @@ object GlyphFolderColors {
     val Orange = Color(0xFFFF6B35)
     val Red = Color(0xFFFF3B30)
     val Teal = Color(0xFF00AECB)
+    val Gray = Color(0xFF8E8E93)
 }
