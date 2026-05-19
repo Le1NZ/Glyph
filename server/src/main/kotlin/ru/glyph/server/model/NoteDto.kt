@@ -52,6 +52,7 @@ internal data class YandexUserInfo(
     @SerialName("id") val id: String,
     @SerialName("login") val login: String,
     @SerialName("default_email") val defaultEmail: String? = null,
+    @SerialName("emails") val emails: List<String>? = null,
 )
 
 @Serializable

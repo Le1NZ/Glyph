@@ -24,6 +24,9 @@ internal interface NoteDao {
     @Query("SELECT * FROM notes WHERE id = :id")
     suspend fun getById(id: String): NoteEntity?
 
+    @Query("SELECT * FROM notes WHERE id = :id")
+    fun observeById(id: String): Flow<NoteEntity?>
+
     @Upsert
     suspend fun upsert(note: NoteEntity)
 

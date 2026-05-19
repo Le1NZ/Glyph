@@ -20,7 +20,22 @@ fun Application.configureDatabase() {
 
     @Suppress("DEPRECATION")
     transaction {
-        SchemaUtils.createMissingTablesAndColumns(Users, Folders, Notes, Tags, NoteTags, NoteShares)
+        SchemaUtils.createMissingTablesAndColumns(Users, Folders, Notes, Tags, NoteTags)
+    }
+
+    // Separate transaction: information_schema query never throws, so no abort risk.
+    // Drops NoteShares only once when old email-based schema is detected.
+    @Suppress("DEPRECATION")
+    transaction {
+        val hasOldEmailColumn = exec(
+            """SELECT 1 FROM information_schema.columns
+               WHERE table_name = 'note_shares' AND column_name = 'email'"""
+        ) { it.next() } == true
+
+        if (hasOldEmailColumn) {
+            SchemaUtils.drop(NoteShares)
+        }
+        SchemaUtils.create(NoteShares)
     }
 
     log.info("Database connected: $url")

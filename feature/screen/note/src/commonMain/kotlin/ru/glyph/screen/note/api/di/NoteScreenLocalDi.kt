@@ -20,6 +20,7 @@ object NoteScreenLocalDi {
                 foldersRepository = get(),
                 tagsRepository = get(),
                 navigator = get(),
+                syncBootstrap = get(),
             )
         }
         navigation<Screen.Note> { screen ->

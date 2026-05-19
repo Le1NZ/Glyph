@@ -52,6 +52,7 @@ kotlin {
                 implementation(projects.core.model)
                 implementation(projects.core.utils)
                 implementation(projects.core.stringResources)
+                implementation(projects.core.sync)
 
                 implementation(libs.markdownRenderer)
                 implementation(libs.markdownRendererM3)

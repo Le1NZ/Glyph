@@ -16,9 +16,12 @@ import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.UserIdPrincipal
 import io.ktor.server.auth.bearer
 import kotlinx.serialization.json.Json
+import org.slf4j.LoggerFactory
 import ru.glyph.server.database.NotesRepository
 import ru.glyph.server.model.UserProfileDto
 import ru.glyph.server.model.YandexUserInfo
+
+private val log = LoggerFactory.getLogger("YandexAuth")
 
 private val yandexHttpClient = HttpClient(CIO) {
     install(ContentNegotiation) {
@@ -37,7 +40,20 @@ fun Application.configureAuth() {
             }
             authenticate { credential ->
                 val userInfo = validateYandexToken(credential.token) ?: return@authenticate null
-                NotesRepository.ensureUser(userInfo.id, userInfo.defaultEmail)
+                log.info("[SHARE_DEBUG] auth: yandexId=${userInfo.id}, login=${userInfo.login}, defaultEmail=${userInfo.defaultEmail}, emailsList=${userInfo.emails}")
+                val emails = buildSet {
+                    // defaultEmail and emails list are only present when the OAuth token
+                    // has the login:email scope. Add them if available.
+                    userInfo.defaultEmail?.lowercase()?.trim()?.let { if (it.isNotBlank()) add(it) }
+                    userInfo.emails?.forEach { e -> e.lowercase().trim().let { if (it.isNotBlank()) add(it) } }
+                    // Fallback: Yandex always has login@yandex.ru as a valid address,
+                    // even when the email scope is not granted.
+                    if (isEmpty() && userInfo.login.isNotBlank()) {
+                        add("${userInfo.login.lowercase().trim()}@yandex.ru")
+                    }
+                }.toList()
+                log.info("[SHARE_DEBUG] auth: final emails to store=$emails")
+                NotesRepository.ensureUser(userInfo.id, emails)
                 UserIdPrincipal(userInfo.id)
             }
         }

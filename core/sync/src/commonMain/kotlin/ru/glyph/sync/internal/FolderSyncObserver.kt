@@ -13,6 +13,7 @@ import ru.glyph.auth.api.model.UserState
 import ru.glyph.database.api.FoldersRepository
 import ru.glyph.model.Folder
 import ru.glyph.model.FolderColor
+import ru.glyph.model.FolderPermission
 import ru.glyph.sync.internal.network.FolderApiService
 import ru.glyph.sync.internal.network.dto.FolderDto
 import ru.glyph.utils.flow.collectLatestIn
@@ -79,11 +80,14 @@ internal class FolderSyncObserver(
         val prevIds = prev.map { it.id }.toSet()
         val prevById = prev.associateBy { it.id }
 
-        (prevIds - curr.map { it.id }.toSet()).forEach { id ->
+        // Only push deletions for folders the user owns (WRITE permission).
+        // READ folders (e.g. the virtual "shared" container) are server-controlled.
+        val prevWriteById = prevById.filter { it.value.permission == FolderPermission.WRITE }
+        (prevWriteById.keys - curr.map { it.id }.toSet()).forEach { id ->
             runCatching { apiService.delete(id) }
         }
 
-        curr.filter { it.id !in prevIds }.forEach { folder ->
+        curr.filter { it.id !in prevIds && it.permission == FolderPermission.WRITE }.forEach { folder ->
             runCatching {
                 val serverFolder = apiService.create(
                     id = folder.id,
@@ -99,7 +103,9 @@ internal class FolderSyncObserver(
 
         curr.filter { currFolder ->
             val previous = prevById[currFolder.id]
-            previous != null && previous.updatedAt != currFolder.updatedAt
+            previous != null &&
+                previous.updatedAt != currFolder.updatedAt &&
+                currFolder.permission == FolderPermission.WRITE
         }.forEach { folder ->
             runCatching {
                 val serverFolder = apiService.update(

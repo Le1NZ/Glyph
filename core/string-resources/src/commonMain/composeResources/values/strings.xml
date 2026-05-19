@@ -99,6 +99,7 @@
     <string name="share_bottom_sheet_permission_write">Редактирование</string>
     <string name="share_bottom_sheet_delete_cd">Удалить</string>
     <string name="share_bottom_sheet_error">Ошибка</string>
+    <string name="share_bottom_sheet_user_not_found">Пользователь не найден. Попросите его открыть приложение хотя бы раз.</string>
 
     <!-- AI Assistant -->
     <string name="ai_assistant_title">AI Ассистент</string>

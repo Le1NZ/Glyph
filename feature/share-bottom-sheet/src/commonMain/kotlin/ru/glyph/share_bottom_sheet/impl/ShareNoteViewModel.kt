@@ -34,11 +34,13 @@ internal class ShareNoteViewModel(
             try {
                 val newShare = repository.addShare(noteId, email, NotePermission.READ)
                 _state.update { current ->
-                    val newShares = current.shares.filter { it.email != email } + newShare
+                    val newShares = current.shares.filter { it.email.lowercase() != newShare.email.lowercase() } + newShare
                     current.copy(shares = newShares, emailInput = "", isAdding = false)
                 }
+            } catch (_: UserNotFoundOnServerException) {
+                _state.update { it.copy(isAdding = false, error = ShareNoteUiState.ShareError.USER_NOT_FOUND) }
             } catch (e: Exception) {
-                _state.update { it.copy(isAdding = false, error = true) }
+                _state.update { it.copy(isAdding = false, error = ShareNoteUiState.ShareError.GENERIC) }
             }
         }
     }
@@ -48,11 +50,11 @@ internal class ShareNoteViewModel(
             try {
                 val updated = repository.updateShare(noteId, email, permission)
                 _state.update { current ->
-                    val newShares = current.shares.map { if (it.email == email) updated else it }
+                    val newShares = current.shares.map { if (it.email.lowercase() == email.lowercase()) updated else it }
                     current.copy(shares = newShares, error = null)
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(error = true) }
+                _state.update { it.copy(error = ShareNoteUiState.ShareError.GENERIC) }
             }
         }
     }
@@ -62,10 +64,10 @@ internal class ShareNoteViewModel(
             try {
                 repository.removeShare(noteId, email)
                 _state.update { current ->
-                    current.copy(shares = current.shares.filter { it.email != email }, error = null)
+                    current.copy(shares = current.shares.filter { it.email.lowercase() != email.lowercase() }, error = null)
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(error = true) }
+                _state.update { it.copy(error = ShareNoteUiState.ShareError.GENERIC) }
             }
         }
     }
@@ -81,7 +83,7 @@ internal class ShareNoteViewModel(
                 val shares = repository.getShares(noteId)
                 _state.update { it.copy(shares = shares, isLoading = false) }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, error = true) }
+                _state.update { it.copy(isLoading = false, error = ShareNoteUiState.ShareError.GENERIC) }
             }
         }
     }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -14,9 +15,11 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.TextRange
@@ -32,6 +35,7 @@ import ru.glyph.navigation.api.model.BottomSheet
 import ru.glyph.screen.note.ui.state.NoteUiState
 import ru.glyph.string.resources.Res
 import ru.glyph.string.resources.note_delete_confirmation
+import ru.glyph.sync.api.SyncBootstrap
 import ru.glyph.utils.flow.collectIn
 import kotlin.time.Duration.Companion.seconds
 
@@ -41,6 +45,7 @@ internal class NoteScreenViewModel(
     private val notesRepository: NotesRepository,
     private val foldersRepository: FoldersRepository,
     private val navigator: Navigator,
+    private val syncBootstrap: SyncBootstrap,
     tagsRepository: TagsRepository,
 ) : ViewModel() {
 
@@ -49,6 +54,9 @@ internal class NoteScreenViewModel(
 
     private val _currentFolderId = MutableStateFlow<String?>(null)
     private val _currentTagIds = MutableStateFlow<List<String>>(emptyList())
+
+    /** True once the user has made any local edit since the note was opened. */
+    private var isLocallyModified = false
 
     val currentFolder: StateFlow<Folder?> = combine(
         _currentFolderId,
@@ -69,10 +77,10 @@ internal class NoteScreenViewModel(
             val note = notesRepository.getById(noteId)
             _currentFolderId.value = note?.folderId
             _currentTagIds.value = note?.tagIds ?: emptyList()
-            
-        val isReadOnly = note?.permission == NotePermission.READ
-        val isOwner = note?.permission == NotePermission.WRITE
-            
+
+            val isReadOnly = note?.permission == NotePermission.READ
+            val isOwner = note?.permission == NotePermission.WRITE
+
             _uiState.value = NoteUiState.Editing(
                 title = note?.title ?: "",
                 content = TextFieldValue(note?.content ?: ""),
@@ -80,6 +88,8 @@ internal class NoteScreenViewModel(
                 isReadOnly = isReadOnly,
                 isOwner = isOwner,
             )
+
+            observeRemoteUpdates(isReadOnly)
         }
 
         uiState
@@ -90,18 +100,57 @@ internal class NoteScreenViewModel(
             .debounce(1.seconds)
             .collectIn(viewModelScope) { pair ->
                 notesRepository.update(noteId, pair.first, pair.second)
+                // Edits flushed to DB — allow remote updates to come through again
+                isLocallyModified = false
             }
+    }
+
+    /**
+     * Polls the server every 10 s and reflects incoming changes via the local DB observer.
+     *
+     * For READ notes: always updates UI (user can't edit).
+     * For WRITE notes: updates UI only when the user hasn't made local edits yet,
+     * so we never override in-progress typing.
+     */
+    private fun observeRemoteUpdates(isReadOnly: Boolean) {
+        notesRepository.observeById(noteId)
+            .filterNotNull()
+            .distinctUntilChanged()
+            .collectIn(viewModelScope) { note ->
+                val current = _uiState.value as? NoteUiState.Editing ?: return@collectIn
+                val contentChanged = note.title != current.title ||
+                        note.content != current.content.text
+                // For WRITE notes, skip UI update while the user has unsaved local edits
+                if (contentChanged && !isReadOnly && isLocallyModified) return@collectIn
+                if (contentChanged) {
+                    _uiState.value = current.copy(
+                        title = note.title,
+                        content = TextFieldValue(note.content),
+                    )
+                }
+                _currentFolderId.value = note.folderId
+                _currentTagIds.value = note.tagIds
+            }
+
+        viewModelScope.launch {
+            while (isActive) {
+                delay(10.seconds)
+                syncBootstrap.pullNote(noteId)
+            }
+        }
     }
 
     fun onTitleChange(title: String) {
         val current = _uiState.value as? NoteUiState.Editing ?: return
         if (current.isReadOnly) return
+        isLocallyModified = true
         _uiState.value = current.copy(title = title)
     }
 
     fun onContentChange(content: TextFieldValue) {
         val current = _uiState.value as? NoteUiState.Editing ?: return
         if (current.isReadOnly) return
+        isLocallyModified = true
         _uiState.value = current.copy(content = content)
     }
 

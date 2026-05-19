@@ -101,6 +101,7 @@ internal class FolderScreenViewModel(
     fun onSubfolderActionsClick(id: String) {
         viewModelScope.launch {
             val folder = foldersRepository.getById(id) ?: return@launch
+            if (folder.permission == FolderPermission.READ) return@launch
             showActions(folder)
         }
     }
@@ -148,6 +149,7 @@ internal class FolderScreenViewModel(
         name = name,
         noteCount = noteCount,
         color = color.toGlyphColor(),
+        isReadOnly = permission == FolderPermission.READ,
     )
 
     private fun Note.toUiModel() = NoteCardUiModel(

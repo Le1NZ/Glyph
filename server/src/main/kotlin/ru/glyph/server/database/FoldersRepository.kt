@@ -11,10 +11,8 @@ import org.jetbrains.exposed.sql.update
 import ru.glyph.server.model.CreateFolderRequest
 import ru.glyph.server.model.FolderDto
 import ru.glyph.server.model.UpdateFolderRequest
-
 import ru.glyph.server.model.FolderColor
 import ru.glyph.server.model.SharedFolderConstants
-
 import ru.glyph.server.model.FolderPermission
 
 object FoldersRepository {
@@ -26,13 +24,13 @@ object FoldersRepository {
             .map { it.toDto(permission = FolderPermission.WRITE) }
             .toMutableList()
 
-        val userEmail = Users.selectAll().where { Users.yandexId eq userId }.firstOrNull()?.get(Users.email)
-        if (userEmail != null) {
-            val hasSharedNotes = (Notes innerJoin NoteShares).selectAll()
-                .where { NoteShares.email eq userEmail }
-                .count() > 0
-            if (hasSharedNotes) {
-                folders.add(FolderDto(
+        val sharedCount = (Notes innerJoin NoteShares).selectAll()
+            .where { NoteShares.yandexId eq userId }
+            .count()
+
+        if (sharedCount > 0) {
+            folders.add(
+                FolderDto(
                     id = SharedFolderConstants.ID,
                     name = SharedFolderConstants.NAME,
                     color = SharedFolderConstants.COLOR,
@@ -40,9 +38,10 @@ object FoldersRepository {
                     permission = FolderPermission.READ,
                     createdAt = 0,
                     updatedAt = 0,
-                ))
-            }
+                )
+            )
         }
+
         folders
     }
 
