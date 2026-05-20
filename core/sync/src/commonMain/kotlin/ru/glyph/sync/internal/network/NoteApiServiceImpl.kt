@@ -7,7 +7,9 @@ import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -22,6 +24,11 @@ internal class NoteApiServiceImpl(
     private val baseUrl = "${config.baseUrl}/api/v1/notes"
 
     override suspend fun getAll(): List<NoteDto> = client.get(baseUrl).body()
+
+    override suspend fun getById(id: String): NoteDto? {
+        val response: HttpResponse = client.get("$baseUrl/$id")
+        return if (response.status == HttpStatusCode.NotFound) null else response.body()
+    }
 
     override suspend fun create(
         id: String,

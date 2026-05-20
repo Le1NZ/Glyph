@@ -42,6 +42,7 @@ import ru.glyph.string.resources.share_bottom_sheet_empty_state
 import ru.glyph.string.resources.share_bottom_sheet_permission_read
 import ru.glyph.string.resources.share_bottom_sheet_permission_write
 import ru.glyph.string.resources.share_bottom_sheet_title
+import ru.glyph.string.resources.share_bottom_sheet_user_not_found
 import ru.glyph.string.resources.Res as StringRes
 
 @Composable
@@ -119,10 +120,19 @@ internal fun ShareNoteBottomSheetInternal(
             }
         }
 
+        if (state.error == ShareNoteUiState.ShareError.USER_NOT_FOUND) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(StringRes.string.share_bottom_sheet_user_not_found),
+                style = GlyphTheme.typography.caption.copy(color = GlyphFolderColors.Red),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         when {
-            state.error == true -> {
+            state.error == ShareNoteUiState.ShareError.GENERIC -> {
                 ru.glyph.design.components.ErrorBlock(
                     onRetryClick = presenter::onRetry,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp)

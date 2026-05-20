@@ -201,5 +201,6 @@ internal class HomeScreenViewModel(
         name = name,
         noteCount = noteCount,
         color = color.toGlyphColor(),
+        isReadOnly = permission == FolderPermission.READ,
     )
 }

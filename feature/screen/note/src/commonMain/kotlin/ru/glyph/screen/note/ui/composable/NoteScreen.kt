@@ -152,20 +152,22 @@ internal fun NoteScreenContent(
 
         FolderChip(
             folder = currentFolder,
-            onClick = onMoveClick,
+            onClick = { if (state.isOwner) onMoveClick() },
             modifier = Modifier
                 .fillMaxWidth()
                 .background(GlyphTheme.colors.surface)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
+            isOwner = state.isOwner,
         )
 
         TagsRow(
             tags = currentTags,
-            onClick = onTagsClick,
+            onClick = { if (state.isOwner) onTagsClick() },
             modifier = Modifier
                 .fillMaxWidth()
                 .background(GlyphTheme.colors.surface)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
+            isOwner = state.isOwner,
         )
 
         when (state) {
@@ -461,6 +463,7 @@ private fun FolderChip(
     folder: Folder?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isOwner: Boolean = true,
 ) {
     val label = folder?.name ?: stringResource(StringRes.string.move_note_no_folder)
     val iconColor = folder?.color?.toGlyphColor() ?: GlyphTheme.colors.textSubtle
@@ -473,7 +476,7 @@ private fun FolderChip(
             modifier = Modifier
                 .clip(GlyphShape.button)
                 .background(color = GlyphTheme.colors.surfaceVariant)
-                .clickable(onClick = onClick)
+                .clickable(enabled = isOwner, onClick = onClick)
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -506,6 +509,7 @@ private fun TagsRow(
     tags: List<Tag>,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    isOwner: Boolean = true,
 ) {
     FlowRow(
         modifier = modifier,
@@ -513,25 +517,27 @@ private fun TagsRow(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (tags.isEmpty()) {
-            Row(
-                modifier = Modifier
-                    .clip(GlyphShape.button)
-                    .background(color = GlyphTheme.colors.surfaceVariant)
-                    .clickable(onClick = onClick)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(
-                    painter = painterResource(Res.drawable.ic_add),
-                    contentDescription = null,
-                    tint = GlyphTheme.colors.textPrimary,
-                    modifier = Modifier.size(14.dp),
-                )
-                Text(
-                    text = stringResource(StringRes.string.note_add_tags),
-                    style = GlyphTheme.typography.body.copy(color = GlyphTheme.colors.textPrimary),
-                )
+            if (isOwner) {
+                Row(
+                    modifier = Modifier
+                        .clip(GlyphShape.button)
+                        .background(color = GlyphTheme.colors.surfaceVariant)
+                        .clickable(onClick = onClick)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_add),
+                        contentDescription = null,
+                        tint = GlyphTheme.colors.textPrimary,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Text(
+                        text = stringResource(StringRes.string.note_add_tags),
+                        style = GlyphTheme.typography.body.copy(color = GlyphTheme.colors.textPrimary),
+                    )
+                }
             }
         } else {
             tags.forEach { tag ->
@@ -539,7 +545,7 @@ private fun TagsRow(
                     modifier = Modifier
                         .clip(GlyphShape.button)
                         .background(color = tag.color.toGlyphColor().copy(alpha = 0.2f))
-                        .clickable(onClick = onClick)
+                        .clickable(enabled = isOwner, onClick = onClick)
                         .padding(horizontal = 12.dp, vertical = 6.dp),
                 ) {
                     Text(
@@ -549,21 +555,23 @@ private fun TagsRow(
                 }
             }
             
-            // Add button at the end
-            Box(
-                modifier = Modifier
-                    .clip(GlyphShape.button)
-                    .background(color = GlyphTheme.colors.surfaceVariant)
-                    .clickable(onClick = onClick)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(Res.drawable.ic_add),
-                    contentDescription = null,
-                    tint = GlyphTheme.colors.textPrimary,
-                    modifier = Modifier.size(14.dp),
-                )
+            if (isOwner) {
+                // Add button at the end
+                Box(
+                    modifier = Modifier
+                        .clip(GlyphShape.button)
+                        .background(color = GlyphTheme.colors.surfaceVariant)
+                        .clickable(onClick = onClick)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_add),
+                        contentDescription = null,
+                        tint = GlyphTheme.colors.textPrimary,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
             }
         }
     }

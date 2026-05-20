@@ -5,5 +5,12 @@ internal data class ShareNoteUiState(
     val shares: List<NoteShareDto> = emptyList(),
     val isLoading: Boolean = false,
     val isAdding: Boolean = false,
-    val error: Boolean? = null,
-)
+    val error: ShareError? = null,
+) {
+    enum class ShareError {
+        /** Generic network / server error. */
+        GENERIC,
+        /** The entered email is not registered in the app yet. */
+        USER_NOT_FOUND,
+    }
+}

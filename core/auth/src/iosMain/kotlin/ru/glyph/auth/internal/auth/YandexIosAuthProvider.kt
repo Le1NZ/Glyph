@@ -55,6 +55,7 @@ internal class YandexIosAuthProvider : PlatformAuthProvider {
                 "?response_type=token" +
                 "&client_id=$CLIENT_ID" +
                 "&redirect_uri=${NSURL(string = REDIRECT_URI)}" +
+                "&scope=login:info+login:email" +
                 "&display=touch"
     }
 

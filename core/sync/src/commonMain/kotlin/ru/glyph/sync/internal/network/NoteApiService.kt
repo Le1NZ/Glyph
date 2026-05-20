@@ -4,6 +4,7 @@ import ru.glyph.sync.internal.network.dto.NoteDto
 
 internal interface NoteApiService {
     suspend fun getAll(): List<NoteDto>
+    suspend fun getById(id: String): NoteDto?
     suspend fun create(
         id: String,
         title: String,

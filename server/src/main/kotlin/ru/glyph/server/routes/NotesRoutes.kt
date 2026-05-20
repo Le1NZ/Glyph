@@ -13,6 +13,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import ru.glyph.server.database.NotesRepository
+import ru.glyph.server.database.TargetUserNotFoundException
 import ru.glyph.server.model.CreateNoteRequest
 import ru.glyph.server.model.UpdateNoteRequest
 
@@ -75,9 +76,13 @@ fun Route.notesRoutes() {
                 val id = call.parameters["id"]
                     ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing id")
                 val request = call.receive<ru.glyph.server.model.ShareNoteRequest>()
-                val share = NotesRepository.addShare(id, userId, request.email, request.permission)
-                    ?: return@post call.respond(HttpStatusCode.Forbidden, "Not owner or invalid request")
-                call.respond(HttpStatusCode.Created, share)
+                try {
+                    val share = NotesRepository.addShare(id, userId, request.email, request.permission)
+                        ?: return@post call.respond(HttpStatusCode.Forbidden, "Not owner or invalid request")
+                    call.respond(HttpStatusCode.Created, share)
+                } catch (_: TargetUserNotFoundException) {
+                    call.respond(HttpStatusCode.NotFound, "User not found. Ask them to open the Glyph app at least once.")
+                }
             }
 
             put("{id}/shares/{email}") {

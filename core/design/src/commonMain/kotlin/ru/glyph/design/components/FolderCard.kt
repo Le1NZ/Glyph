@@ -44,6 +44,7 @@ data class FolderCardUiModel(
     val name: String,
     val noteCount: Int,
     val color: Color,
+    val isReadOnly: Boolean = false,
 )
 
 @Composable
@@ -95,22 +96,24 @@ fun FolderCard(
                     modifier = Modifier.size(20.dp),
                 )
             }
-            Box(
-                modifier = Modifier
-                    .offset(y = (-8).dp)
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .clickable(onClick = onActionsClick)
-                    .semantics { contentDescription = actionsLabel },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(Res.drawable.ic_more_horiz),
-                    contentDescription = null,
-                    tint = colors.textSecondary,
+            if (!folder.isReadOnly) {
+                Box(
                     modifier = Modifier
-                        .size(20.dp),
-                )
+                        .offset(y = (-8).dp)
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .clickable(onClick = onActionsClick)
+                        .semantics { contentDescription = actionsLabel },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(Res.drawable.ic_more_horiz),
+                        contentDescription = null,
+                        tint = colors.textSecondary,
+                        modifier = Modifier
+                            .size(20.dp),
+                    )
+                }
             }
         }
         Spacer(modifier = Modifier.height(8.dp))

@@ -53,7 +53,10 @@ object NoteTags : Table("note_tags") {
 
 object NoteShares : Table("note_shares") {
     val noteId = varchar("note_id", 36).references(Notes.id, onDelete = ReferenceOption.CASCADE)
-    val email = varchar("email", 255)
+    /** Resolved Yandex user ID of the recipient – used for reliable matching. */
+    val yandexId = varchar("yandex_id", 255).references(Users.yandexId, onDelete = ReferenceOption.CASCADE)
+    /** Email that the owner typed when sharing – kept only for display purposes. */
+    val displayEmail = varchar("display_email", 255)
     val permission = varchar("permission", 16) // "READ" or "WRITE"
-    override val primaryKey = PrimaryKey(noteId, email)
+    override val primaryKey = PrimaryKey(noteId, yandexId)
 }

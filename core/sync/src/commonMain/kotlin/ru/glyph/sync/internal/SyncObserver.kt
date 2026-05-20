@@ -14,6 +14,7 @@ import ru.glyph.auth.api.UserCenter
 import ru.glyph.auth.api.model.UserState
 import ru.glyph.database.api.NotesRepository
 import ru.glyph.model.Note
+import ru.glyph.model.NotePermission
 import ru.glyph.sync.api.SyncBootstrap
 import ru.glyph.sync.internal.network.NoteApiService
 import ru.glyph.sync.internal.network.dto.NoteDto
@@ -47,6 +48,27 @@ internal class SyncObserver(
     override fun pullAsync() {
         pullAsyncJob?.cancel()
         pullAsyncJob = scope.launch { pullAll() }
+    }
+
+    override suspend fun pullNote(id: String): Result<Unit> = runCatching {
+        val dto = apiService.getById(id) ?: return@runCatching
+        val local = notesRepository.getById(id)
+        // Only upsert if the server has a strictly newer version,
+        // so we never wipe in-progress local edits.
+        if (local == null || dto.updatedAt > local.updatedAt) {
+            notesRepository.upsert(
+                Note(
+                    id = dto.id,
+                    title = dto.title,
+                    content = dto.content,
+                    folderId = dto.folderId,
+                    tagIds = dto.tagIds,
+                    permission = dto.permission,
+                    createdAt = dto.createdAt,
+                    updatedAt = dto.updatedAt,
+                )
+            )
+        }
     }
 
     override suspend fun pullAll(): Result<Unit> = runCatching {
@@ -94,14 +116,19 @@ internal class SyncObserver(
     }
 
     private suspend fun syncChanges(prev: List<Note>, curr: List<Note>) {
-        val prevIds = prev.map { it.id }.toSet()
-        val prevById = prev.associateBy { it.id }
+        // Only sync notes the user owns. READ notes are server-controlled (shared with us).
+        val prevOwned = prev.filter { it.permission == NotePermission.WRITE }
+        val currOwned = curr.filter { it.permission == NotePermission.WRITE }
 
-        (prevIds - curr.map { it.id }.toSet()).forEach { id ->
+        val prevOwnedIds = prevOwned.map { it.id }.toSet()
+        val prevOwnedById = prevOwned.associateBy { it.id }
+        val currOwnedIds = currOwned.map { it.id }.toSet()
+
+        (prevOwnedIds - currOwnedIds).forEach { id ->
             runCatching { apiService.delete(id) }
         }
 
-        curr.filter { it.id !in prevIds }.forEach { note ->
+        currOwned.filter { it.id !in prevOwnedIds }.forEach { note ->
             runCatching {
                 val serverNote = apiService.create(
                     id = note.id,
@@ -116,8 +143,8 @@ internal class SyncObserver(
             }
         }
 
-        curr.filter { currNote ->
-            val previous = prevById[currNote.id]
+        currOwned.filter { currNote ->
+            val previous = prevOwnedById[currNote.id]
             previous != null && previous.updatedAt != currNote.updatedAt
         }.forEach { note ->
             runCatching {

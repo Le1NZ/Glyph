@@ -7,12 +7,15 @@ import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-
 import ru.glyph.model.NotePermission
+
+class UserNotFoundOnServerException : Exception("User not found on server")
 
 @Serializable
 internal data class NoteShareDto(
@@ -43,10 +46,12 @@ internal class ShareApiServiceImpl(
     }
 
     override suspend fun addShare(noteId: String, email: String, permission: NotePermission): NoteShareDto {
-        return client.post("$baseUrl/api/v1/notes/$noteId/shares") {
+        val response: HttpResponse = client.post("$baseUrl/api/v1/notes/$noteId/shares") {
             contentType(ContentType.Application.Json)
             setBody(ShareNoteRequest(email, permission))
-        }.body()
+        }
+        if (response.status == HttpStatusCode.NotFound) throw UserNotFoundOnServerException()
+        return response.body()
     }
 
     override suspend fun updateShare(noteId: String, email: String, permission: NotePermission): NoteShareDto {

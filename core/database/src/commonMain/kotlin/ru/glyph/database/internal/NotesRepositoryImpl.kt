@@ -47,6 +47,10 @@ internal class NotesRepositoryImpl(
         }
     }
 
+    override fun observeById(id: String): Flow<Note?> {
+        return dao.observeById(id).map { it?.toDomain() }
+    }
+
     override suspend fun getById(id: String): Note? {
         return dao.getById(id)?.toDomain()
     }
