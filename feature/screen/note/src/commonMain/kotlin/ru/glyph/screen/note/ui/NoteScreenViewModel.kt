@@ -134,7 +134,7 @@ internal class NoteScreenViewModel(
 
         viewModelScope.launch {
             while (isActive) {
-                delay(10.seconds)
+                delay(3.seconds)
                 syncBootstrap.pullNote(noteId)
             }
         }

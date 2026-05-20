@@ -13,17 +13,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,21 +32,21 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import ru.glyph.design.components.PrimaryButton
 import ru.glyph.design.components.SecondaryButton
+import ru.glyph.design.ic_send
 import ru.glyph.design.theme.GlyphFolderColors
 import ru.glyph.design.theme.GlyphTheme
-import ru.glyph.design.Res as DesignRes
-import ru.glyph.design.ic_send
 import ru.glyph.string.resources.Res
-import ru.glyph.string.resources.ai_assistant_title
-import ru.glyph.string.resources.ai_assistant_greeting
 import ru.glyph.string.resources.ai_assistant_disclaimer
-import ru.glyph.string.resources.ai_assistant_prompt_hint
-import ru.glyph.string.resources.ai_assistant_quick_shorter
-import ru.glyph.string.resources.ai_assistant_quick_fix
-import ru.glyph.string.resources.ai_assistant_quick_translate
+import ru.glyph.string.resources.ai_assistant_greeting
 import ru.glyph.string.resources.ai_assistant_insert_button
 import ru.glyph.string.resources.ai_assistant_loading
+import ru.glyph.string.resources.ai_assistant_prompt_hint
+import ru.glyph.string.resources.ai_assistant_quick_fix
+import ru.glyph.string.resources.ai_assistant_quick_shorter
+import ru.glyph.string.resources.ai_assistant_quick_translate
 import ru.glyph.string.resources.ai_assistant_retry_button
+import ru.glyph.string.resources.ai_assistant_title
+import ru.glyph.design.Res as DesignRes
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -62,6 +60,7 @@ internal fun AiAssistantBottomSheetContent(
 ) {
     Column(
         modifier = Modifier
+            .verticalScroll(rememberScrollState())
             .fillMaxWidth()
             .padding(horizontal = 20.dp)
             .padding(bottom = 20.dp, top = 8.dp),
